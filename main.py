@@ -59,7 +59,7 @@ class Client(commands.Bot):
     
     @task("Setup Hook")
     async def setup_hook(self):
-        # self.app = BotApp.from_bot(self)
+        self.app = BotApp.from_bot(self)
         await self.setup_cogs()
         await self.add_views()
     
