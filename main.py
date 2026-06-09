@@ -11,6 +11,8 @@ from core.guild_command_sync import sync_guild_commands
 from core.loggers import log_commands, log_tasks
 from core.config import ConfigManager
 from core.decorators import task
+from core.app import BotApp
+
 
 COG_FILES = [file.split(".")[0].title() for file in os.listdir("cogs/") if file.endswith(".py")]
 
@@ -18,7 +20,7 @@ COG_FILES = [file.split(".")[0].title() for file in os.listdir("cogs/") if file.
 class Client(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix = '.', intents = discord.Intents().all())
-        # self.app: BotApp
+        self.app: BotApp
     
     @task("Setup Cogs")
     async def setup_cogs(self):
