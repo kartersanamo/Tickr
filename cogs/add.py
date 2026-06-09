@@ -89,5 +89,6 @@ class Add(commands.Cog):
             await self.set_permissions(channel = interaction.channel, user = user)
             await self.send_embed(interaction = interaction, user = user)
 
+
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(Add(client))
