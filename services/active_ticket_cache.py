@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import discord
+from discord.ext import commands, tasks
 
 from core.database import DatabasePool
 from core.decorators import TaskDecorator
@@ -36,11 +37,11 @@ class ActiveTicketCache:
 active_ticket_cache = ActiveTicketCache()
 
 
-class ActiveTicketCacheCog(discord.ext.commands.Cog):
-    def __init__(self, client: discord.ext.commands.Bot):
+class ActiveTicketCacheCog(commands.Cog):
+    def __init__(self, client: commands.Bot):
         self.client = client
 
-    @discord.ext.tasks.loop(minutes=2)
+    @tasks.loop(minutes=2)
     async def refresh_cache(self) -> None:
         await active_ticket_cache.refresh()
 
@@ -52,7 +53,7 @@ class ActiveTicketCacheCog(discord.ext.commands.Cog):
         self.refresh_cache.cancel()
 
 
-async def setup(client: discord.ext.commands.Bot) -> None:
+async def setup(client: commands.Bot) -> None:
     cog = ActiveTicketCacheCog(client)
     await client.add_cog(cog)
     cog.refresh_cache.start()

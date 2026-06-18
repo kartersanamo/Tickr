@@ -157,4 +157,4 @@ if not TOKEN:
     raise ValueError("Set DISCORD_TOKEN in .env")
 
 if __name__ == "__main__":
-    client.run(token=TOKEN)
+    client.run(token=TOKEN, log_handler=None)

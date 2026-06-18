@@ -1,6 +1,5 @@
 from logging.handlers import TimedRotatingFileHandler
-from pytz.tzinfo import DstTzInfo, StaticTzInfo
-from pytz import _UTCclass
+from pytz.tzinfo import BaseTzInfo
 import logging.config
 import datetime
 import pytz
@@ -10,7 +9,7 @@ GRAY: str = "\033[90m"
 LIGHT_PINK: str = "\033[95m"
 RESET: str = "\033[0m"
 
-EST: DstTzInfo | StaticTzInfo | _UTCclass = pytz.timezone(zone = "US/Eastern")
+EST: BaseTzInfo = pytz.timezone(zone = "US/Eastern")
 current_time_est: datetime.date = datetime.datetime.now(EST)
 log_filename: str =  f"logs/{current_time_est.strftime('%Y-%m-%d')}.log"
 
@@ -61,11 +60,11 @@ LOGGING_CONFIG = {
     "disable_existing_loggers": False,
     "formatters": {
         "file": {
-            "format": "%{levelname}-10s %(asctime)s %(funcName)-15s : %(message)s",
+            "format": "%(levelname)-10s %(asctime)s %(funcName)-15s : %(message)s",
             "()": ESTFormatter
         },
         "standard": {
-            "format": f"{GRAY}%(asctime)s{RESET} %(levelname)-8s {LIGHT_PINK}%s(name)s{RESET} %(message)s",
+            "format": f"{GRAY}%(asctime)s{RESET} %(levelname)-8s {LIGHT_PINK}%(name)s{RESET} %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
             "()": ESTFormatter 
         }
@@ -99,13 +98,14 @@ LOGGING_CONFIG = {
         },
         "discord": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": False
         }
     }
 }
 
 
+os.makedirs("logs", exist_ok=True)
 logging.config.dictConfig(config = LOGGING_CONFIG)
 
 

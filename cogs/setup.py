@@ -45,6 +45,20 @@ class SetupView(discord.ui.View):
         )
 
 
+class StaffRoleSelect(discord.ui.RoleSelect):
+    def __init__(self):
+        super().__init__(placeholder="Staff role...", min_values=1, max_values=1)
+
+    async def callback(self, interaction: discord.Interaction):
+        view: StaffRoleView = self.view  # type: ignore
+        view.parent.staff_role_id = self.values[0].id
+        await interaction.response.send_message(
+            "Select the **ticket log channel** (close transcripts):",
+            view=LogChannelView(view.guild_id, view.parent),
+            ephemeral=True,
+        )
+
+
 class StaffRoleView(discord.ui.View):
     def __init__(self, guild_id: int, parent: SetupView):
         super().__init__(timeout=600)
@@ -52,18 +66,24 @@ class StaffRoleView(discord.ui.View):
         self.parent = parent
         self.add_item(StaffRoleSelect())
 
-    class StaffRoleSelect(discord.ui.RoleSelect):
-        def __init__(self):
-            super().__init__(placeholder="Staff role...", min_values=1, max_values=1)
 
-        async def callback(self, interaction: discord.Interaction):
-            view: StaffRoleView = self.view  # type: ignore
-            view.parent.staff_role_id = self.values[0].id
-            await interaction.response.send_message(
-                "Select the **ticket log channel** (close transcripts):",
-                view=LogChannelView(view.guild_id, view.parent),
-                ephemeral=True,
-            )
+class LogChannelSelect(discord.ui.ChannelSelect):
+    def __init__(self):
+        super().__init__(
+            placeholder="Ticket log channel...",
+            channel_types=[discord.ChannelType.text],
+            min_values=1,
+            max_values=1,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        view: LogChannelView = self.view  # type: ignore
+        view.parent.log_channel_id = self.values[0].id
+        await interaction.response.send_message(
+            "Select the **panel channel** where `/send-tickets` will post:",
+            view=PanelChannelView(view.guild_id, view.parent),
+            ephemeral=True,
+        )
 
 
 class LogChannelView(discord.ui.View):
@@ -73,23 +93,24 @@ class LogChannelView(discord.ui.View):
         self.parent = parent
         self.add_item(LogChannelSelect())
 
-    class LogChannelSelect(discord.ui.ChannelSelect):
-        def __init__(self):
-            super().__init__(
-                placeholder="Ticket log channel...",
-                channel_types=[discord.ChannelType.text],
-                min_values=1,
-                max_values=1,
-            )
 
-        async def callback(self, interaction: discord.Interaction):
-            view: LogChannelView = self.view  # type: ignore
-            view.parent.log_channel_id = self.values[0].id
-            await interaction.response.send_message(
-                "Select the **panel channel** where `/send-tickets` will post:",
-                view=PanelChannelView(view.guild_id, view.parent),
-                ephemeral=True,
-            )
+class PanelChannelSelect(discord.ui.ChannelSelect):
+    def __init__(self):
+        super().__init__(
+            placeholder="Ticket panel channel...",
+            channel_types=[discord.ChannelType.text],
+            min_values=1,
+            max_values=1,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        view: PanelChannelView = self.view  # type: ignore
+        view.parent.panel_channel_id = self.values[0].id
+        await interaction.response.send_message(
+            "Select a **ticket category** (Discord category channel):",
+            view=CategoryView(view.guild_id, view.parent),
+            ephemeral=True,
+        )
 
 
 class PanelChannelView(discord.ui.View):
@@ -99,23 +120,24 @@ class PanelChannelView(discord.ui.View):
         self.parent = parent
         self.add_item(PanelChannelSelect())
 
-    class PanelChannelSelect(discord.ui.ChannelSelect):
-        def __init__(self):
-            super().__init__(
-                placeholder="Ticket panel channel...",
-                channel_types=[discord.ChannelType.text],
-                min_values=1,
-                max_values=1,
-            )
 
-        async def callback(self, interaction: discord.Interaction):
-            view: PanelChannelView = self.view  # type: ignore
-            view.parent.panel_channel_id = self.values[0].id
-            await interaction.response.send_message(
-                "Select a **ticket category** (Discord category channel):",
-                view=CategoryView(view.guild_id, view.parent),
-                ephemeral=True,
-            )
+class CategorySelect(discord.ui.ChannelSelect):
+    def __init__(self):
+        super().__init__(
+            placeholder="Ticket category...",
+            channel_types=[discord.ChannelType.category],
+            min_values=1,
+            max_values=1,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        view: CategoryView = self.view  # type: ignore
+        view.parent.category_id = self.values[0].id
+        await interaction.response.send_message(
+            "Choose how to seed ticket types:",
+            view=TemplateView(view.guild_id, view.parent),
+            ephemeral=True,
+        )
 
 
 class CategoryView(discord.ui.View):
@@ -124,24 +146,6 @@ class CategoryView(discord.ui.View):
         self.guild_id = guild_id
         self.parent = parent
         self.add_item(CategorySelect())
-
-    class CategorySelect(discord.ui.ChannelSelect):
-        def __init__(self):
-            super().__init__(
-                placeholder="Ticket category...",
-                channel_types=[discord.ChannelType.category],
-                min_values=1,
-                max_values=1,
-            )
-
-        async def callback(self, interaction: discord.Interaction):
-            view: CategoryView = self.view  # type: ignore
-            view.parent.category_id = self.values[0].id
-            await interaction.response.send_message(
-                "Choose how to seed ticket types:",
-                view=TemplateView(view.guild_id, view.parent),
-                ephemeral=True,
-            )
 
 
 class TemplateView(discord.ui.View):

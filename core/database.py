@@ -6,7 +6,7 @@ from typing import Any, Optional
 import asyncio
 import logging
 
-from core.errors.db import log_db_failure
+from core.errors.db import DatabaseErrors
 from core.config import ConfigManager
 from core.loggers import log_tasks
 
@@ -48,7 +48,7 @@ class DatabasePool:
             )
         return self._pool
     
-    def execute(self, query: str, params: tuple | None = None) -> list:
+    def _execute_query(self, query: str, params: tuple | None = None) -> list:
         rows: list = []
         connection = None
         try:
@@ -62,15 +62,20 @@ class DatabasePool:
                 rows = cursor.fetchall()
             cursor.close()
         except Exception as error:
-            log_db_failure(logger = log_tasks, exc = error, query_hint = query)
+            DatabaseErrors.log_db_failure(logger = log_tasks, exc = error, query_hint = query)
         finally:
             if connection is not None:
                 connection.close()
         return rows
-    
+
+
+DatabasePool.execute = staticmethod(
+    lambda query, params=None: DatabasePool.get()._execute_query(query, params)
+)
+
 
 def execute(query: str, params: tuple | None = None) -> list:
-    return DatabasePool.get().execute(query = query, params = params)
+    return DatabasePool.execute(query, params)
 
 
 async def aexecute(query: str, params: tuple | None = None) -> list:
