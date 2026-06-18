@@ -13,7 +13,10 @@ class ManageTickets(commands.Cog):
         self.client = client
 
     @app_commands.guild_only()
-    @app_commands.command(name="manage-tickets", description="Manages the ticket types")
+    @app_commands.command(
+        name="manage-tickets",
+        description="Fully manage panel categories, ticket types, and questions",
+    )
     @app_commands.check(guild_configured_check)
     async def manage_tickets(self, interaction: discord.Interaction):
         if interaction.guild_id is None:

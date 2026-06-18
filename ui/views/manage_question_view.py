@@ -2,10 +2,12 @@ from typing import Any
 import discord
 import json
 
-from ui.views.manage_tickets_support import ManageTicketsSupport
+from services.manage_tickets_auth import require_ticket_editor
+from services.ticket_types_editor import remove_question
 from services.guild_config_service import GuildConfigService
 from services.guild_helpers import embed_color, set_embed_footer
 from services.ticket_types_store import load_raw, reload_tickets, save_raw
+from ui.views.manage_tickets_support import ManageTicketsSupport
 from core.loggers import log_commands
 
 
@@ -55,14 +57,11 @@ class ManageQuestionView(discord.ui.View):
 
     async def change_value(self, interaction: discord.Interaction, value: str):
         try:
+            if not await require_ticket_editor(interaction):
+                return
             guild = interaction.guild
             if guild is None:
                 return await interaction.response.send_message(content = "You must be in a server to do this!", ephemeral = True)
-            star_role = guild.get_role((await GuildConfigService.for_guild(interaction.guild_id)).get('ROLE_IDS.ADMINISTRATOR_PERMS_ROLE_ID')) 
-            if star_role is None:
-                return await interaction.response.send_message(content = "Administrator permissions role not found!", ephemeral = True)
-            if not isinstance(interaction.user, discord.Member) or not star_role in interaction.user.roles:
-                return await interaction.response.send_message(content = "You can't do this!", ephemeral = True)
             await interaction.response.defer()
             await self.update_embed(interaction)
             if interaction.message is None or interaction.message.embeds is None or len(interaction.message.embeds) == 0:
@@ -140,17 +139,38 @@ class ManageQuestionView(discord.ui.View):
     async def change_placeholder(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Placeholder")
     
+    @discord.ui.button(label = "Delete Question", style = discord.ButtonStyle.danger, custom_id = "delete_question", row = 1)
+    async def delete_question(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        try:
+            if not await require_ticket_editor(interaction):
+                return
+            await interaction.response.defer()
+            if interaction.guild_id is None:
+                return
+            info = await load_raw(interaction.guild_id)
+            info = remove_question(info, self.ticket_category, self.ticket, self.question)
+            await save_raw(interaction.guild_id, info)
+            from ui.views.manage_type_view import ManageTypeView
+
+            view = ManageTypeView(info, self.ticket_category, self.ticket)
+            await view.update_embed(interaction)
+            if interaction.message is not None:
+                await interaction.message.edit(view=view)
+            await ManageTicketsSupport.update_msg(interaction)
+            await interaction.followup.send(
+                content=f"`✅` Deleted question **{self.question}**.",
+                ephemeral=True,
+            )
+        except ValueError as exc:
+            await interaction.followup.send(f"`❌` {exc}", ephemeral=True)
+        except Exception as exc:
+            log_commands.error(f"Failed to delete question: {exc}")
+
     @discord.ui.button(label = "Change Length", style = discord.ButtonStyle.grey, custom_id = "change_length", row = 0, disabled = False)
     async def change_length(self, interaction: discord.Interaction, Button: discord.ui.Button):
         try:
-            guild = interaction.guild
-            if guild is None:
-                return await interaction.response.send_message(content = "You must be in a server to do this!", ephemeral = True)
-            star_role = guild.get_role((await GuildConfigService.for_guild(interaction.guild_id)).get('ROLE_IDS.ADMINISTRATOR_PERMS_ROLE_ID')) 
-            if star_role is None:
-                return await interaction.response.send_message(content = "Administrator permissions role not found!", ephemeral = True)
-            if not isinstance(interaction.user, discord.Member) or not star_role in interaction.user.roles:
-                return await interaction.response.send_message(content = "You can't do this!", ephemeral = True)
+            if not await require_ticket_editor(interaction):
+                return
             await interaction.response.defer()
             if interaction.guild_id is None:
                 return

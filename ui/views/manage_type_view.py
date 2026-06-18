@@ -2,6 +2,9 @@ from typing import Any
 import discord
 import json
 
+from services.manage_tickets_auth import require_ticket_editor
+from services.ticket_types_editor import cycle_private_mode, set_private_mode
+from ui.views.manage_tickets_modals import AddQuestionModal, RenameTicketTypeModal
 from ui.views.manage_tickets_support import ManageTicketsSupport
 from services.guild_config_service import GuildConfigService
 from services.guild_helpers import embed_color, set_embed_footer
@@ -88,6 +91,7 @@ class ManageTypeView(discord.ui.View):
             manage_type_embed.add_field(name = "Emoji", value = ticket_info.get('Emoji', "None"))
             manage_type_embed.add_field(name = "Description", value = ticket_info.get('Description', 'None'))
             manage_type_embed.add_field(name = "Category", value = category_string)
+            manage_type_embed.add_field(name = "Private Mode", value = str(ticket_info.get('PrivateMode') or "None"))
             manage_type_embed.add_field(name = "Pings", value = "".join(pings))
             manage_type_embed.add_field(name = "Roles", value = "".join(roles))
             manage_type_embed.add_field(name = "Message", value = message)
@@ -102,14 +106,11 @@ class ManageTypeView(discord.ui.View):
     
     async def change_value(self, interaction: discord.Interaction, value):
         try:
+            if not await require_ticket_editor(interaction):
+                return
             if interaction.guild is None:
                 return
             guild = interaction.guild
-            star_role = guild.get_role((await GuildConfigService.for_guild(interaction.guild_id)).get('ROLE_IDS.ADMINISTRATOR_PERMS_ROLE_ID')) 
-            if star_role is None:
-                return await interaction.response.send_message(content = "Administrator permissions role not found!", ephemeral = True)
-            if not isinstance(interaction.user, discord.Member) or not star_role in interaction.user.roles:
-                return await interaction.response.send_message(content = "You can't do this!", ephemeral = True)
             await interaction.response.defer()
             await self.update_embed(interaction)
             if interaction.message is None or interaction.message.embeds is None or len(interaction.message.embeds) == 0:
@@ -165,20 +166,22 @@ class ManageTypeView(discord.ui.View):
         except Exception as e:
             log_commands.error(f"Failed to change the value of {value} {e}")
 
-    @discord.ui.button(label = "|<", style = discord.ButtonStyle.red, custom_id = "go_back_type", row = 0, disabled = False)
+    @discord.ui.button(label = "|<", style = discord.ButtonStyle.red, custom_id = "go_back_type", row = 4, disabled = False)
     async def go_back_type(self, interaction: discord.Interaction, Button: discord.ui.Button):
         try:
             from ui.views.manage_tickets_view import ManageTicketsView
 
             await interaction.response.defer()
-            view = ManageTicketsView(self.ticket_info, self.ticket_category)
+            guild_id = interaction.guild_id or 0
+            data = await reload_tickets(guild_id)
+            view = ManageTicketsView(data, self.ticket_category, guild_id)
             await view.update_embed(interaction)
             if interaction.message is not None:
                 await interaction.message.edit(view = view)
         except Exception as e:
             log_commands.error(f"{interaction.user} ({interaction.user.id}) has failed to go back {e}")
 
-    @discord.ui.button(label = "Toggle Status", style = discord.ButtonStyle.grey, custom_id = "toggle_status", row = 0, disabled = False)
+    @discord.ui.button(label = "Toggle Status", style = discord.ButtonStyle.grey, custom_id = "toggle_status", row = 4, disabled = False)
     async def toggle_status(self, interaction: discord.Interaction, Button: discord.ui.Button):
         try:
             await interaction.response.defer()
@@ -203,30 +206,87 @@ class ManageTypeView(discord.ui.View):
         except Exception as e:
             log_commands.error(f"{interaction.user} ({interaction.user.id}) has failed to toggle ticket type of {self.ticket_category} {self.ticket} {e}")
 
-    @discord.ui.button(label = "Change Name", style = discord.ButtonStyle.grey, custom_id = "change_name", row = 0, disabled = False)
+    @discord.ui.button(label = "Rename", style = discord.ButtonStyle.green, custom_id = "rename_type", row = 4)
+    async def rename_type(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await require_ticket_editor(interaction):
+            return
+        guild_id = interaction.guild_id or 0
+        await interaction.response.send_modal(
+            RenameTicketTypeModal(guild_id, self.ticket_category, self.ticket)
+        )
+
+    @discord.ui.button(label = "Add Question", style = discord.ButtonStyle.green, custom_id = "add_question", row = 4)
+    async def add_question(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await require_ticket_editor(interaction):
+            return
+        guild_id = interaction.guild_id or 0
+        await interaction.response.send_modal(
+            AddQuestionModal(guild_id, self.ticket_category, self.ticket)
+        )
+
+    @discord.ui.button(label = "Private Mode", style = discord.ButtonStyle.grey, custom_id = "cycle_private_mode", row = 3)
+    async def cycle_private_mode(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            if not await require_ticket_editor(interaction):
+                return
+            await interaction.response.defer()
+            if interaction.guild_id is None:
+                return
+            info = await load_raw(interaction.guild_id)
+            current = info[self.ticket_category][self.ticket].get("PrivateMode")
+            new_mode = cycle_private_mode(current)
+            info = set_private_mode(info, self.ticket_category, self.ticket, new_mode)
+            await save_raw(interaction.guild_id, info)
+            self.ticket_info = info
+            view = ManageTypeView(info, self.ticket_category, self.ticket)
+            await view.update_embed(interaction)
+            if interaction.message is not None:
+                await interaction.message.edit(view=view)
+            await ManageTicketsSupport.update_msg(interaction)
+            await interaction.followup.send(
+                content=f"`✅` Private mode is now `{new_mode or 'None'}`.",
+                ephemeral=True,
+            )
+        except Exception as e:
+            log_commands.error(f"Failed to cycle private mode: {e}")
+
+    @discord.ui.button(label = "Delete Type", style = discord.ButtonStyle.danger, custom_id = "delete_type", row = 3)
+    async def delete_type(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await require_ticket_editor(interaction):
+            return
+        from ui.views.manage_tickets_view import ConfirmDeleteTicketTypeView
+
+        guild_id = interaction.guild_id or 0
+        await interaction.response.edit_message(
+            content=f"Delete ticket type **{self.ticket}** from **{self.ticket_category}**?",
+            embed=None,
+            view=ConfirmDeleteTicketTypeView(guild_id, self.ticket_category, self.ticket),
+        )
+
+    @discord.ui.button(label = "Change Name", style = discord.ButtonStyle.grey, custom_id = "change_name", row = 1, disabled = False)
     async def change_name(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Name")
 
-    @discord.ui.button(label = "Change Emoji", style = discord.ButtonStyle.grey, custom_id = "change_emoji", row = 0, disabled = False)
+    @discord.ui.button(label = "Change Emoji", style = discord.ButtonStyle.grey, custom_id = "change_emoji", row = 1, disabled = False)
     async def change_emoji(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Emoji")
     
-    @discord.ui.button(label = "Change Description", style = discord.ButtonStyle.grey, custom_id = "change_description", row = 0, disabled = False)
+    @discord.ui.button(label = "Change Description", style = discord.ButtonStyle.grey, custom_id = "change_description", row = 1, disabled = False)
     async def change_description(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Description")
     
-    @discord.ui.button(label = "Change Category", style = discord.ButtonStyle.grey, custom_id = "change_category", row = 1, disabled = False)
+    @discord.ui.button(label = "Change Category", style = discord.ButtonStyle.grey, custom_id = "change_category", row = 2, disabled = False)
     async def change_category(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Category")
     
-    @discord.ui.button(label = "Change Message", style = discord.ButtonStyle.grey, custom_id = "change_message", row = 1, disabled = False)
+    @discord.ui.button(label = "Change Message", style = discord.ButtonStyle.grey, custom_id = "change_message", row = 2, disabled = False)
     async def change_message(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Message")
 
-    @discord.ui.button(label = "Change Roles", style = discord.ButtonStyle.grey, custom_id = "change_roles", row = 1, disabled = False)
+    @discord.ui.button(label = "Change Roles", style = discord.ButtonStyle.grey, custom_id = "change_roles", row = 2, disabled = False)
     async def change_roles(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Roles")
 
-    @discord.ui.button(label = "Change Pings", style = discord.ButtonStyle.grey, custom_id = "change_pings", row = 1, disabled = False)
+    @discord.ui.button(label = "Change Pings", style = discord.ButtonStyle.grey, custom_id = "change_pings", row = 2, disabled = False)
     async def change_pings(self, interaction: discord.Interaction, Button: discord.ui.Button):
         await self.change_value(interaction, "Pings")
