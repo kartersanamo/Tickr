@@ -4,7 +4,7 @@ from discord import app_commands
 import discord
 
 from services.guild_config_service import GuildConfigService
-from services.guild_guard import guild_configured
+from services.guild_guard import guild_configured_check
 from ui.views.manage_categories_view import ManageCategoriesView
 
 
@@ -13,8 +13,8 @@ class ManageTickets(commands.Cog):
         self.client = client
 
     @app_commands.guild_only()
-    @guild_configured()
     @app_commands.command(name="manage-tickets", description="Manages the ticket types")
+    @app_commands.check(guild_configured_check)
     async def manage_tickets(self, interaction: discord.Interaction):
         if interaction.guild_id is None:
             return

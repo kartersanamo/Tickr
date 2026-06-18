@@ -55,3 +55,8 @@ async def require_guild_configured(interaction: discord.Interaction) -> bool:
             )
         return False
     return True
+
+
+async def guild_configured_check(interaction: discord.Interaction) -> bool:
+    """app_commands.check predicate for configured guilds."""
+    return await require_guild_configured(interaction)

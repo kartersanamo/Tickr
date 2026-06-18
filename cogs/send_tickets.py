@@ -6,7 +6,7 @@ import discord
 
 from core.decorators import TaskDecorator
 from services.guild_config_service import GuildConfigService
-from services.guild_guard import guild_configured
+from services.guild_guard import guild_configured_check
 from services.guild_helpers import embed_color
 from ui.views.ticket_logs_view import TicketLogs
 from ui.views.tickets_view import TicketsView
@@ -18,12 +18,12 @@ class TicketsSend(commands.Cog):
         self.client: commands.Bot = client
 
     @app_commands.guild_only()
-    @guild_configured()
     @app_commands.command(name="send-tickets", description="Sends the ticket panel messages")
     @app_commands.describe(
         option="The message that you'd wish to send",
         channel="Channel to post the panel in (defaults to current channel)",
     )
+    @app_commands.check(guild_configured_check)
     async def send_tickets(
         self,
         interaction: discord.Interaction,
