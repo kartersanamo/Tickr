@@ -87,6 +87,13 @@ class GuildRepository:
             (int(configured), now, guild_id),
         )
 
+    def set_tickets_global_enabled(self, guild_id: int, enabled: bool) -> None:
+        now = int(time.time())
+        self._db.execute(
+            "UPDATE guilds SET tickets_global_enabled = %s, updated_at = %s WHERE guild_id = %s",
+            (int(enabled), now, guild_id),
+        )
+
     def get_dashboard(self, guild_id: int) -> dict | None:
         rows = self._db.execute(
             "SELECT * FROM guild_dashboard WHERE guild_id = %s",

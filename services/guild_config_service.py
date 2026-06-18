@@ -184,6 +184,38 @@ class GuildConfigService:
         cls.invalidate(guild_id)
 
     @classmethod
+    async def set_tickets_global_enabled(cls, guild_id: int, enabled: bool) -> None:
+        import asyncio
+
+        await asyncio.to_thread(cls._repo.set_tickets_global_enabled, guild_id, enabled)
+        cls.invalidate(guild_id)
+
+    @classmethod
+    async def patch_config(cls, guild_id: int, path: str, value: Any) -> GuildConfig:
+        from services.guild_config_fields import set_config_value
+
+        current = await cls.for_guild(guild_id)
+        updated = set_config_value(current.all(), path, value)
+        return await cls.save_config(guild_id, updated)
+
+    @classmethod
+    async def get_dashboard(cls, guild_id: int) -> dict | None:
+        import asyncio
+
+        return await asyncio.to_thread(cls._repo.get_dashboard, guild_id)
+
+    @classmethod
+    async def save_dashboard(
+        cls,
+        guild_id: int,
+        notify_url: str | None = None,
+        api_secret: str | None = None,
+    ) -> None:
+        import asyncio
+
+        await asyncio.to_thread(cls._repo.upsert_dashboard, guild_id, notify_url, api_secret)
+
+    @classmethod
     async def reload_tickets(cls, guild_id: int) -> dict:
         cls.invalidate(guild_id)
         cfg = await cls.for_guild(guild_id)
