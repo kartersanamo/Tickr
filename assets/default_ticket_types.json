@@ -1,0 +1,66 @@
+{
+    "TOGGLE_STATUS": "Enabled",
+    "Support": {
+        "General Support": {
+            "Status": "Enabled",
+            "Emoji": "🎫",
+            "Description": "Get help from our staff team",
+            "Category": null,
+            "PrivateMode": null,
+            "Message": "Thank you for opening a ticket! Please click **Enter Information** below and fill out the form.",
+            "Roles": [],
+            "Pings": [],
+            "Questions": [
+                {
+                    "Label": "What do you need help with?",
+                    "Placeholder": "Describe your issue...",
+                    "Length": "Long"
+                }
+            ]
+        },
+        "Report a User": {
+            "Status": "Enabled",
+            "Emoji": "🚨",
+            "Description": "Report a rule violation",
+            "Category": null,
+            "PrivateMode": null,
+            "Message": "Please provide as much detail as possible about the incident.",
+            "Roles": [],
+            "Pings": [],
+            "Questions": [
+                {
+                    "Label": "Who are you reporting?",
+                    "Placeholder": "Username or ID...",
+                    "Length": "Short"
+                },
+                {
+                    "Label": "What happened?",
+                    "Placeholder": "Describe the incident...",
+                    "Length": "Long"
+                }
+            ]
+        },
+        "Appeal": {
+            "Status": "Enabled",
+            "Emoji": "📋",
+            "Description": "Appeal a punishment",
+            "Category": null,
+            "PrivateMode": null,
+            "Message": "Please explain why your punishment should be reviewed.",
+            "Roles": [],
+            "Pings": [],
+            "Questions": [
+                {
+                    "Label": "What punishment are you appealing?",
+                    "Placeholder": "Ban, mute, etc...",
+                    "Length": "Short"
+                },
+                {
+                    "Label": "Why should this be reviewed?",
+                    "Placeholder": "Your appeal...",
+                    "Length": "Long"
+                }
+            ]
+        }
+    }
+}

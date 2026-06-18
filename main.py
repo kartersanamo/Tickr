@@ -1,3 +1,6 @@
+"""
+main.py — Tickr multi-guild ticket bot entry point.
+"""
 import os
 from pathlib import Path
 
@@ -7,98 +10,151 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from core.guild_command_sync import sync_guild_commands
+from assets.dashboard_http import DashboardHttp
+from core.analytics.register import CommandTrackingRegistrar
+from core.bot_config import BotConfig
+from core.errors.setup import ErrorSetup
+from core.guild_command_sync import GuildCommandSync
 from core.loggers import log_commands, log_tasks
-from core.config import ConfigManager
-from core.decorators import task
+from core.decorators import TaskDecorator
 from core.app import BotApp
+from core.database import DatabasePool
+from repositories.guild_repository import GuildRepository
+from ui.views.ticket_logs_view import TicketLogs
+from ui.views.tickets_view import TicketsView
+from ui.views.tickets_view2_view import TicketsView2
 
 
-COG_FILES = [file.split(".")[0].title() for file in os.listdir("cogs/") if file.endswith(".py")]
+COG_FILES: list[str] = [
+    f.split(".")[0].title()
+    for f in os.listdir("cogs/")
+    if f.endswith(".py") and not f.startswith("_")
+]
 
 
 class Client(commands.Bot):
-    def __init__(self):
-        super().__init__(command_prefix = '.', intents = discord.Intents().all())
-        self.app: BotApp
-    
-    @task("Setup Cogs")
-    async def setup_cogs(self):
-        if COG_FILES is None:
-            log_tasks.warning("No cog files to load, skipping.")
-        for ext in COG_FILES:
-            await self.load_extension("cogs." + ext.lower())
-            log_tasks.info(f"Loaded cog {ext}.py")
-    
-    @task("Add Views")
-    async def add_views(self):
-        views: list[discord.ui.View] = []
-        if views is None:
-            log_tasks.warning("No views to add, skipping.")
-        for view in views:
-            self.add_view(view)
-            log_tasks.info(f"Added view {view.__class__.__name__}")
-    
-    @task("Update Presence")
-    async def update_presence(self):
-        presence = ConfigManager.get("PRESENCE")
-        await client.change_presence(activity = discord.Game(name = presence))
-        log_tasks.info(f"Updated the bot's presence to {presence}")
-    
-    @task("Remove Help")
-    async def remove_help(self):
-        client.remove_command("help")
-    
-    @task("Sync Command Tree")
-    async def sync_command_tree(self):
-        await sync_guild_commands(
-            self,
-            config_guild_id = ConfigManager.get("GUILD_ID"),
-            log = log_tasks
+    def __init__(self) -> None:
+        super().__init__(command_prefix=".", intents=discord.Intents.all())
+        ErrorSetup.wire_bot(
+            bot=self,
+            bot_name="Tickr",
+            log_commands=log_commands,
+            log_tasks=log_tasks,
         )
-    
-    @task("Setup Hook")
-    async def setup_hook(self):
+
+    @TaskDecorator.task(action_name="Setup Cogs")
+    async def _setup_cogs(self) -> None:
+        loaded: list[str] = []
+        for ext in ("services.active_ticket_cache", *(f"cogs.{n.lower()}" for n in COG_FILES)):
+            try:
+                await self.load_extension(ext)
+                loaded.append(ext)
+            except Exception as exc:
+                log_commands.error(f"Failed to load extension {ext}: {exc}")
+        log_tasks.info(f"Loaded {len(loaded)} extensions")
+
+    @TaskDecorator.task(action_name="Register Analytics")
+    async def _register_analytics(self) -> None:
+        await CommandTrackingRegistrar.register_command_tracking(bot=self)
+
+    @TaskDecorator.task(action_name="Add Views")
+    async def _add_views(self) -> None:
+        category_names: set[str] = set()
+        try:
+            rows = DatabasePool.execute("SELECT ticket_types FROM guilds")
+            import json
+
+            for row in rows:
+                types = row.get("ticket_types")
+                if isinstance(types, str):
+                    types = json.loads(types)
+                for name in (types or {}).keys():
+                    if name != "TOGGLE_STATUS":
+                        category_names.add(name)
+        except Exception:
+            pass
+        names = sorted(category_names)
+        views: list[discord.ui.View] = [
+            TicketsView.persistent(names),
+            TicketsView2.persistent(names),
+            TicketLogs(),
+        ]
+        for view in views:
+            try:
+                self.add_view(view)
+            except ValueError as exc:
+                log_tasks.error(f"Failed to add view {view.__class__.__name__}: {exc}")
+
+    @TaskDecorator.task(action_name="Update Presence")
+    async def _update_presence(self) -> None:
+        presence = BotConfig.get("PRESENCE", "Tickr Tickets")
+        await self.change_presence(activity=discord.Game(name=presence))
+
+    @TaskDecorator.task(action_name="Remove Help")
+    async def _remove_help(self) -> None:
+        self.remove_command("help")
+
+    @TaskDecorator.task(action_name="Sync Command Tree")
+    async def _sync_command_tree(self) -> None:
+        await GuildCommandSync.sync_commands(bot=self, log=log_tasks)
+
+    @TaskDecorator.task(action_name="Start Dashboard HTTP")
+    async def _setup_dashboard_http(self) -> None:
+        await DashboardHttp.start(client=self)
+
+    def _register_reload_command(self) -> None:
+        bot = self
+
+        @app_commands.guild_only()
+        @app_commands.describe(cog="The cog to reload")
+        @app_commands.autocomplete(cog=bot.cog_autocomplete)
+        @bot.tree.command(name="tickr-reload", description="Reloads a Tickr cog")
+        async def tickr_reload_slash(interaction: discord.Interaction, cog: str) -> None:
+            await bot.tickr_reload_command(interaction, cog)
+
+    @TaskDecorator.task(action_name="Tickr Reload Command", log=True)
+    async def tickr_reload_command(self, interaction: discord.Interaction, cog: str) -> None:
+        if cog not in COG_FILES:
+            await interaction.response.send_message(f"Invalid cog **{cog}.py**", ephemeral=True)
+            return
+        try:
+            await self.reload_extension(f"cogs.{cog.lower()}")
+            await interaction.response.send_message(f"Reloaded **{cog}.py**", ephemeral=True)
+        except Exception as exc:
+            log_commands.error(f"Reload failed for {cog}: {exc}")
+            await interaction.response.send_message(f"Failed to reload **{cog}.py**", ephemeral=True)
+
+    async def cog_autocomplete(self, _: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+        return [
+            app_commands.Choice(name=cog, value=cog)
+            for cog in COG_FILES
+            if current.lower() in cog.lower()
+        ]
+
+    @TaskDecorator.task(action_name="Setup Hook")
+    async def setup_hook(self) -> None:
+        await ErrorSetup.wire_bot_async_setup(bot=self, bot_name="Tickr", log_tasks=log_tasks)
         self.app = BotApp.from_bot(self)
-        await self.setup_cogs()
-        await self.add_views()
-    
-    @task("Logging in")
-    async def on_ready(self):
-        await self.update_presence()
-        await self.remove_help()
-        await self.sync_command_tree()
+        self._register_reload_command()
+        await self._setup_cogs()
+        await self._register_analytics()
+        await self._add_views()
+        await self._setup_dashboard_http()
+
+    @TaskDecorator.task(action_name="Logging in")
+    async def on_ready(self) -> None:
+        await self._update_presence()
+        await self._remove_help()
+        await self._sync_command_tree()
         if self.user:
             log_tasks.info(f"Logged in as {self.user} ({self.user.id})")
 
 
-client: commands.Bot = Client()
+client = Client()
 
-
-@task("Tickr Reload Command", True)
-async def tickr_reload_command(interaction: discord.Interaction, cog: str):
-    if interaction.guild is None:
-        return await interaction.response.send_message(content = "Commands cannot be ran in DMs!", ephemeral = True)
-    if cog not in COG_FILES:
-        return await interaction.response.send_message(content = f"Invalid cog name **cog.py**", ephemeral = True)
-
-    await client.reload_extension(f"cogs.{cog.lower()}")
-    await interaction.response.send_message(content = f"Successfully reloaded **{cog}.py**", ephemeral = True)
-
-async def cog_autocomplete(_: discord.Interaction, current: str) -> list[app_commands.Choice]:
-    return [
-        app_commands.Choice(name = cog, value = cog)
-        for cog in COG_FILES if current.lower() in cog.lower()
-    ]
-
-@client.tree.command(name = "tickr-reload", description = "Reloads a Tickr Cog Class")
-@app_commands.autocomplete(cog = cog_autocomplete)
-async def tickrreload(interaction: discord.Interaction, cog: str):
-    await tickr_reload_command(interaction = interaction, cog = cog)
-
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = BotConfig.get("TOKEN")
 if not TOKEN:
     raise ValueError("Set DISCORD_TOKEN in .env")
 
 if __name__ == "__main__":
-    client.run(token = TOKEN)
+    client.run(token=TOKEN)

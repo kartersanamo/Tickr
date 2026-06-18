@@ -47,8 +47,11 @@ def log_exception(
         ctx_str = " ".join(f"{k}={v}" for k, v in ctx.items())
         parts.append(f"({ctx_str})")
     
-    logger.log(
+        logger.log(
         level = level,
         msg = " ".join(parts),
         exc_info = exc if level >= logging.ERROR else None
     )
+
+
+ExceptionLogging = type("ExceptionLogging", (), {"log_exception": staticmethod(log_exception)})

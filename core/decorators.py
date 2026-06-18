@@ -31,3 +31,7 @@ def task(action_name: str, log: bool = False):
         return wrapper
     
     return decorator
+
+
+class TaskDecorator:
+    task = staticmethod(task)

@@ -7,7 +7,8 @@ import discord
 import asyncio
 import os
 
-from core.config import ConfigManager
+from services.guild_config_service import GuildConfigService
+from services.guild_helpers import embed_color
 from core.decorators import task
 from core.loggers import log_tasks
 
@@ -15,10 +16,7 @@ from core.loggers import log_tasks
 class ActiveTickets(commands.Cog):
     def __init__(self, client: commands.Bot) -> None:
         self.client: commands.Bot = client
-
-        cfg_entries: int = ConfigManager.get(key = 'ACTIVE_TICKETS_CACHE')['ENTRIES']
-        cfg_min_to_expiry: int = ConfigManager.get(key = 'ACTIVE_TICKETS_CACHE')['MINUTES_TO_EXPIRE']
-        self.cache = cachetools.TTLCache(maxsize = cfg_entries, ttl = 60 * cfg_min_to_expiry)
+        self.cache = cachetools.TTLCache(maxsize=1000, ttl=600)
 
     @task(action_name = "Check User Messages", log = False)
     async def check_user_messages(self, user_id: int, channel: discord.TextChannel, tickets: list) -> None:
@@ -43,11 +41,12 @@ class ActiveTickets(commands.Cog):
     @task(action_name = "Get Tickets", log = True)
     async def get_tickets_list(self, interaction: discord.Interaction) -> List[Tuple[str, str]]:
         tickets: List[Tuple[str, str]] = []
-        if not interaction.guild:
-                log_tasks.error(msg = "No guild attached to this interaction")
-                return tickets
-        
-        for category_id in ConfigManager.get(key = "TICKET_CATEGORIES"):
+        if not interaction.guild or interaction.guild_id is None:
+            log_tasks.error(msg="No guild attached to this interaction")
+            return tickets
+
+        cfg = await GuildConfigService.for_guild(interaction.guild_id)
+        for category_id in cfg.get("TICKET_CATEGORIES", []):
             category = interaction.guild.get_channel(category_id)
             if not category:
                 log_tasks.warning(msg = f"Category {category_id} could not be found")
@@ -85,10 +84,12 @@ class ActiveTickets(commands.Cog):
             blocks.append("\n".join(cur))
         return blocks
     
-    def _build_active_tickets_layout(self, interaction: discord.Interaction, tickets: List[tuple[str, str]]) -> Tuple[discord.ui.LayoutView, List[discord.File]]:
-        color: discord.Color = discord.Color.from_str(ConfigManager.get(key = "EMBED_COLOR"))
-        logo_path: str = ConfigManager.get(key = "LOGO")
-        logo_url: str = self.client.app.embeds.get_logo_url() # type: ignore
+    async def _build_active_tickets_layout(
+        self, interaction: discord.Interaction, tickets: List[tuple[str, str]], cfg
+    ) -> Tuple[discord.ui.LayoutView, List[discord.File]]:
+        color = embed_color(cfg)
+        logo_path = cfg.get("LOGO")
+        logo_url = self.client.app.embeds.get_logo_url(logo_path)  # type: ignore
         logo_files: List[discord.File] = []
 
         view = discord.ui.LayoutView(timeout = None)
@@ -104,7 +105,7 @@ class ActiveTickets(commands.Cog):
         else:
             title_block += "\n\n*You are not active in any ticket channels right now.*"
 
-        thumb_desc: str = (ConfigManager.get(key = "FOOTER") or "Logo")[:256]
+        thumb_desc: str = (cfg.get("FOOTER") or "Logo")[:256]
         use_section: bool = False
         thumb_media: Optional[str] = None
 
@@ -142,7 +143,7 @@ class ActiveTickets(commands.Cog):
                 inner.append(discord.ui.TextDisplay(content = block))
         
         inner.append(discord.ui.Separator(visible = True, spacing = SeparatorSpacing.small))
-        inner.append(discord.ui.TextDisplay(content = f"{ConfigManager.get('FOOTER')}"))
+        inner.append(discord.ui.TextDisplay(content=f"{cfg.get('FOOTER', 'Tickr Tickets')}"))
         
         container: discord.ui.Container = discord.ui.Container(*inner, accent_color = color)
         view.add_item(item = container)
@@ -164,7 +165,8 @@ class ActiveTickets(commands.Cog):
     
     @task(action_name = "Send Active Tickets Response", log = False)
     async def send_active_tickets_response(self, interaction: discord.Interaction, tickets: List[Tuple[str, str]]) -> None:
-        view, logo_files = self._build_active_tickets_layout(interaction = interaction, tickets = tickets)
+        cfg = await GuildConfigService.for_guild(interaction.guild_id)
+        view, logo_files = await self._build_active_tickets_layout(interaction=interaction, tickets=tickets, cfg=cfg)
         edit_kw: dict = {
             "content" : None,
             "embed": None,

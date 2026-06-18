@@ -1,0 +1,35 @@
+{
+    "LOGO": null,
+    "FOOTER": "Tickr Tickets",
+    "EMBED_COLOR": "0x5865F2",
+    "ADMIN_ROLES": [],
+    "ROLE_HIERARCHY": {},
+    "CHANNEL_IDS": {
+        "ADMIN_TICKET_LOGS_ID": null,
+        "MANAGEMENT_TICKET_LOGS_ID": null,
+        "VERIFY_CHANNEL_ID": null,
+        "TICKET_LOGS_ID": null,
+        "TICKET_CHANNEL_ID": null,
+        "ADMIN_PRIVATE_CATEGORY_ID": null,
+        "MANAGEMENT_PRIVATE_CATEGORY_ID": null,
+        "TICKET_COUNT_VOICE_CHANNEL_ID": null
+    },
+    "ROLE_IDS": {
+        "STAFF_TEAM_ROLE_ID": null,
+        "ADMINISTRATOR_PERMS_ROLE_ID": null,
+        "VERIFIED_ROLE_ID": null
+    },
+    "BLACKLISTED_MOVE_CATEGORIES": [],
+    "DISREGARD_REMOVE_COMMAND_ROLE_IDS": [],
+    "TICKET_CATEGORIES": [],
+    "TRANSCRIPT_PASTE_URL": null,
+    "TICKET_BLACKLIST_WEBHOOK": null,
+    "ACTIVE_TICKETS_CACHE": {
+        "ENTRIES": 1000,
+        "MINUTES_TO_EXPIRE": 10
+    },
+    "PRIVATE_CATEGORY_MODES": {
+        "ADMIN": "admin",
+        "MANAGEMENT": "management"
+    }
+}

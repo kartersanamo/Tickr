@@ -1,9 +1,28 @@
+"""manage_tickets.py — In-Discord ticket type editor."""
 from discord.ext import commands
+from discord import app_commands
+import discord
+
+from services.guild_config_service import GuildConfigService
+from services.guild_guard import guild_configured
+from ui.views.manage_categories_view import ManageCategoriesView
 
 
 class ManageTickets(commands.Cog):
-    def __init__(self, client: commands.Bot) -> None:
-        self.client: commands.Bot = client
+    def __init__(self, client: commands.Bot):
+        self.client = client
+
+    @app_commands.guild_only()
+    @guild_configured()
+    @app_commands.command(name="manage-tickets", description="Manages the ticket types")
+    async def manage_tickets(self, interaction: discord.Interaction):
+        if interaction.guild_id is None:
+            return
+        await interaction.response.send_message(content="Fetching the manage tickets menu...")
+        ticket_info = await GuildConfigService.reload_tickets(interaction.guild_id)
+        view = ManageCategoriesView(ticket_info, interaction.guild_id)
+        await view.update_embed(interaction)
+        await interaction.edit_original_response(view=view)
 
 
 async def setup(client: commands.Bot) -> None:

@@ -1,71 +1,58 @@
 from __future__ import annotations
 
-from discord.ext import commands, tasks
-from typing import Optional, Any
-import asyncio
-import logging
-import types
+import discord
 
-from core.database import aexecute
-
-log = logging.getLogger(name = "Tasks")
+from core.database import DatabasePool
+from core.decorators import TaskDecorator
 
 
 class ActiveTicketCache:
     def __init__(self) -> None:
-        self._channels: dict[int, str] = {}
-        self._lock = asyncio.Lock()
+        self._cache: dict[str, int] = {}
 
-    def get_owner(self, channel_id: int) -> Optional[str]:
-        return self._channels.get(channel_id)
+    @staticmethod
+    def _key(guild_id: int, channel_id: int) -> str:
+        return f"{guild_id}:{channel_id}"
 
-    def register(self, channel_id: int, owner_id: int | str) -> None:
-        self._channels[int(channel_id)] = str(owner_id)
-    
-    def unregister(self, channel_id: int) -> None:
-        self._channels.pop(int(channel_id), None)
-    
+    def register(self, guild_id: int, channel_id: int, owner_id: int) -> None:
+        self._cache[self._key(guild_id, channel_id)] = owner_id
+
+    def unregister(self, guild_id: int, channel_id: int) -> None:
+        self._cache.pop(self._key(guild_id, channel_id), None)
+
+    def get_owner(self, guild_id: int, channel_id: int) -> int | None:
+        return self._cache.get(self._key(guild_id, channel_id))
+
+    @TaskDecorator.task("Refresh Active Ticket Cache", False)
     async def refresh(self) -> None:
-        rows: list[dict] = await aexecute(
-            "SELECT channel_id, owner_id FROM tickets WHERE is_active = %s",
-            (1,)
+        rows = DatabasePool.execute(
+            "SELECT guild_id, channel_id, owner_id FROM tickets WHERE is_active = 1"
         )
-        parsed: dict[int, str] = {}
+        self._cache.clear()
         for row in rows:
-            try:
-                parsed[int(row["channel_id"])] = str(row["owner_id"])
-            except (KeyError, TypeError, ValueError):
-                continue
-        async with self._lock:
-            self._channels = parsed
-
-        log.debug(msg = f"Active ticket cache refreshed ({len(parsed)} channels)")
+            self._cache[self._key(int(row["guild_id"]), int(row["channel_id"]))] = int(row["owner_id"])
 
 
 active_ticket_cache = ActiveTicketCache()
 
 
-class ActiveTicketCacheCog(commands.Cog):
-    def __init__(self, client: commands.Bot):
-        self.client: commands.Bot = client
+class ActiveTicketCacheCog(discord.ext.commands.Cog):
+    def __init__(self, client: discord.ext.commands.Bot):
+        self.client = client
 
-    async def cog_load(self) -> None:
+    @discord.ext.tasks.loop(minutes=2)
+    async def refresh_cache(self) -> None:
         await active_ticket_cache.refresh()
-        if not self._refresh_loop.is_running():
-            self._refresh_loop.start()
-    
-    def cog_unload(self) -> types.CoroutineType[Any, Any, None]: 
-        self._refresh_loop.cancel()
-        return self.cog_unload()
 
-    @tasks.loop(minutes = 2)
-    async def _refresh_loop(self) -> None:
-        await active_ticket_cache.refresh()
-    
-    @_refresh_loop.before_loop
-    async def _before_refresh(self) -> None:
+    @refresh_cache.before_loop
+    async def before_refresh(self) -> None:
         await self.client.wait_until_ready()
 
+    def cog_unload(self) -> None:
+        self.refresh_cache.cancel()
 
-async def setup(client: commands.Bot) -> None:
-    await client.add_cog(ActiveTicketCacheCog(client = client))
+
+async def setup(client: discord.ext.commands.Bot) -> None:
+    cog = ActiveTicketCacheCog(client)
+    await client.add_cog(cog)
+    cog.refresh_cache.start()

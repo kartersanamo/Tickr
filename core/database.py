@@ -37,7 +37,7 @@ class DatabasePool:
             "autocommit": bool(cfg.get("autocommit", True))
         }
 
-    def _ensure_pool(self) -> pooling.MySqlConnectionPool:
+    def _ensure_pool(self) -> pooling.MySQLConnectionPool:
         if self._pool is None:
             cfg = self._pool_config()
             self._pool = pooling.MySQLConnectionPool(
