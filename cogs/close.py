@@ -17,7 +17,7 @@ from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_commands, log_tasks
 from services.guild_config_service import GuildConfigService
-from services.guild_helpers import embed_color, optional_logo_file, set_embed_footer
+from services.guild_helpers import embed_color, format_transcript_line, optional_logo_file, set_embed_footer
 from services.statistics_service import is_found
 from services.ticket_check_service import is_ticket
 
@@ -41,7 +41,7 @@ class Close(commands.Cog):
         base_url = cfg.transcript_paste_url(BotConfig.get("TRANSCRIPT_PASTE_URL", ""))
         suffix = BotConfig.get("TRANSCRIPT_PASTE_SUFFIX", "/documents")
         if not base_url:
-            return "Transcript unavailable (paste URL not configured)"
+            return ""
         url = f"{base_url.rstrip('/')}{suffix}"
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         response = requests.post(url, headers=headers, data=content.encode("utf-8"), timeout=30)
@@ -170,7 +170,7 @@ class Close(commands.Cog):
         desc = (
             f"`🎫` **{ticket_type} #{ticket_number}** was closed by {closed_by}\n"
             f" **Reason:** {reason}\n **Owner:** {owner_mention} / {getattr(owner, 'name', owner)}\n"
-            f" **Ticket Duration:** {delta}\n[Ticket Transcript]({link})"
+            f" **Ticket Duration:** {delta}\n{format_transcript_line(link)}"
         )
         embed = discord.Embed(color=embed_color(cfg), description=desc)
         set_embed_footer(embed, cfg)

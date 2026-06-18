@@ -6,7 +6,7 @@ from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_tasks
 from services.guild_config_service import GuildConfigService
-from services.guild_helpers import embed_color, set_embed_footer
+from services.guild_helpers import embed_color, format_transcript_line, set_embed_footer
 
 
 class Questions(discord.ui.Modal):
@@ -72,7 +72,7 @@ class Questions(discord.ui.Modal):
             description = (
                 f"Closed by <@{row['closed_by_id']}> on <t:{row['closed_at']}:f> "
                 f"(<t:{row['closed_at']}:R>)\nReason: {row['reason']}\n"
-                f"[Ticket Transcript]({row['transcript']})"
+                f"{format_transcript_line(row['transcript'])}"
             )
         embed = discord.Embed(
             title=f"Recently Closed {row['name']}#{row['number']}",

@@ -4,6 +4,7 @@ from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_tasks
 from services.guild_config_service import GuildConfigService
+from services.guild_helpers import format_transcript_line
 from ui.views.paginator import paginator_for_cfg
 
 
@@ -27,7 +28,7 @@ class TicketLogs(discord.ui.View):
             opened_at = int(float(row["opened_at"]))
             ticket_info = (
                 f"`📖` **Ticket:** {row['name']} ({row['type']})\n"
-                f" **Transcript:** [Ticket Transcript]({row['transcript']})\n"
+                f"{format_transcript_line(row['transcript'])}\n"
                 f" **Created At:** <t:{opened_at}:f>\n"
                 f" **Closure Reason:** {row['reason']}\n"
             )

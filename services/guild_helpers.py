@@ -61,3 +61,17 @@ def optional_logo_file(cfg: Any) -> discord.File | None:
         if os.path.isfile(logo):
             return discord.File(logo)
     return None
+
+
+def is_transcript_url(value: str | None) -> bool:
+    return bool(value and str(value).startswith(("http://", "https://")))
+
+
+def format_transcript_line(link: str | None) -> str:
+    """Format transcript text for ticket log embeds and history views."""
+    if is_transcript_url(link):
+        return f" **Transcript:** [View transcript]({link})"
+    return (
+        " **Transcript:** Not available — set a **Transcript paste URL** "
+        "in `/manage-config` to enable links."
+    )
