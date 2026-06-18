@@ -8,7 +8,7 @@ import asyncio
 import os
 
 from services.guild_config_service import GuildConfigService
-from services.guild_helpers import embed_color
+from services.guild_helpers import embed_color_int
 from core.decorators import task
 from core.loggers import log_tasks
 
@@ -87,7 +87,7 @@ class ActiveTickets(commands.Cog):
     async def _build_active_tickets_layout(
         self, interaction: discord.Interaction, tickets: List[tuple[str, str]], cfg
     ) -> Tuple[discord.ui.LayoutView, List[discord.File]]:
-        color = embed_color(cfg)
+        color = embed_color_int(cfg)
         logo_path = cfg.get("LOGO")
         logo_url = self.client.app.embeds.get_logo_url(logo_path)  # type: ignore
         logo_files: List[discord.File] = []

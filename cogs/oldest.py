@@ -6,7 +6,8 @@ import discord
 from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_tasks
-from ui.views.paginator import Paginator
+from services.guild_config_service import GuildConfigService
+from ui.views.paginator import paginator_for_cfg
 
 
 class Oldest(commands.Cog):
@@ -49,7 +50,8 @@ class Oldest(commands.Cog):
     async def send_paginator(
         self, interaction: discord.Interaction, data: list[str], category: discord.CategoryChannel = None
     ) -> None:
-        paginate = Paginator()
+        cfg = await GuildConfigService.for_guild(interaction.guild_id)
+        paginate = paginator_for_cfg(cfg)
         paginate.title = f"Oldest Tickets in {category.name}" if category else "Oldest Tickets"
         paginate.sep = 15
         paginate.category = category

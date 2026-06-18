@@ -11,6 +11,7 @@ import pytz
 
 
 from core.database import DatabasePool
+from services.guild_helpers import embed_color_int
 
 
 class TicketLogService:
@@ -124,7 +125,7 @@ class TicketLogService:
 
     @staticmethod
     def accent_int(cfg: dict) -> int:
-        return discord.Color.from_str(cfg["EMBED_COLOR"]).value
+        return embed_color_int(cfg)
 
     @classmethod
     def build_page_quick_link_chunks(

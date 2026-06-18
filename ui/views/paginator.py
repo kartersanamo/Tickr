@@ -1,13 +1,21 @@
 import discord
 
 from services.embed_service import EmbedService
+from services.guild_helpers import DEFAULT_EMBED_COLOR, embed_color
 
 LOGO = "assets/Logo.png"
 
 
 class Paginator(discord.ui.View):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        color: discord.Color | None = None,
+        footer_label: str = "Tickr Tickets",
+    ) -> None:
         super().__init__(timeout=None)
+        self.embed_color = color or discord.Color.from_str(DEFAULT_EMBED_COLOR)
+        self.footer_label = footer_label
         self.data: list
         self.title: str
         self.sorted: str | None = None
@@ -24,7 +32,7 @@ class Paginator(discord.ui.View):
         await self.update_message(interaction)
 
     def create_embed(self):
-        embed = discord.Embed(title=self.title, description="", color=discord.Color.gold())
+        embed = discord.Embed(title=self.title, description="", color=self.embed_color)
         footer_text = self.get_footer_text()
         if self.data[0] == "No data found.":
             embed.description = "No data found."
@@ -75,7 +83,7 @@ class Paginator(discord.ui.View):
         total_pages = int(len(self.data) / self.sep)
         total_pages += 1 if int(len(self.data)) % self.sep != 0 else 0
         footer_text: str = (
-            f"Page {self.current_page}/{total_pages} ({len(self.data)} total) | Minecadia Tickets Bot"
+            f"Page {self.current_page}/{total_pages} ({len(self.data)} total) | {self.footer_label}"
         )
         footer_text += self.sorted if self.sorted else ""
         return footer_text
@@ -102,3 +110,8 @@ class Paginator(discord.ui.View):
         total_pages = int(len(self.data) / self.sep)
         total_pages += 1 if int(len(self.data)) % self.sep != 0 else 0
         await self.handle_page_button(interaction, total_pages - self.current_page)
+
+
+def paginator_for_cfg(cfg) -> Paginator:
+    footer = cfg.get("FOOTER", "Tickr Tickets") if hasattr(cfg, "get") else "Tickr Tickets"
+    return Paginator(color=embed_color(cfg), footer_label=footer)

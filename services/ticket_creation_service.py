@@ -13,6 +13,7 @@ from core.loggers import log_tasks
 from repositories.guild_repository import GuildRepository
 from services.embed_service import EmbedService
 from services.guild_config_service import GuildConfig, GuildConfigService
+from services.guild_helpers import embed_color
 
 
 class TicketCreationService:
@@ -316,7 +317,7 @@ class TicketCreationService:
             await panel_channel.set_permissions(staff, view_channel=False)
         embed = discord.Embed(
             description=f"✅ You have successfully opened a ticket! {channel.mention}",
-            color=discord.Color.from_str(cfg.get("EMBED_COLOR", "0x5865F2")),
+            color=embed_color(cfg),
         )
         await interaction.edit_original_response(embed=embed)
         description = (
@@ -326,7 +327,7 @@ class TicketCreationService:
         )
         description += ticket_info.get("Message", "") + "\n \n**One of our staff members will be with you shortly.**"
         embed = discord.Embed(
-            color=discord.Color.from_str(cfg.get("EMBED_COLOR", "0x5865F2")),
+            color=embed_color(cfg),
             description=description,
         )
         logo = cfg.get("LOGO")
@@ -385,7 +386,7 @@ class TicketCreationService:
 
         embed = discord.Embed(
             description=f"📖 Attempting to create a new ticket for {interaction.user.mention}",
-            color=discord.Color.from_str(cfg.get("EMBED_COLOR", "0x5865F2")),
+            color=embed_color(cfg),
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
         start = time.perf_counter()
@@ -397,7 +398,7 @@ class TicketCreationService:
         if result:
             embed = discord.Embed(
                 description=result,
-                color=discord.Color.from_str(cfg.get("EMBED_COLOR", "0x5865F2")),
+                color=embed_color(cfg),
             )
             await interaction.edit_original_response(embed=embed)
             return
@@ -407,7 +408,7 @@ class TicketCreationService:
             await interaction.edit_original_response(
                 embed=discord.Embed(
                     description="`❌` Failed to create a ticket",
-                    color=discord.Color.from_str(cfg.get("EMBED_COLOR", "0x5865F2")),
+                    color=embed_color(cfg),
                 )
             )
             return

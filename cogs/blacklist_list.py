@@ -5,7 +5,8 @@ import discord
 
 from core.database import DatabasePool
 from core.decorators import TaskDecorator
-from ui.views.paginator import Paginator
+from services.guild_config_service import GuildConfigService
+from ui.views.paginator import paginator_for_cfg
 
 
 class BlacklistList(commands.Cog):
@@ -14,7 +15,8 @@ class BlacklistList(commands.Cog):
 
     @TaskDecorator.task("Send Paginator")
     async def send_paginator(self, interaction: discord.Interaction, data: list) -> None:
-        paginate = Paginator()
+        cfg = await GuildConfigService.for_guild(interaction.guild_id)
+        paginate = paginator_for_cfg(cfg)
         paginate.title = "Blacklisted Users"
         paginate.data = data
         paginate.sep = 5

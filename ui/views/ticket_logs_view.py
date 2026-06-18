@@ -3,7 +3,8 @@ import discord
 from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_tasks
-from ui.views.paginator import Paginator
+from services.guild_config_service import GuildConfigService
+from ui.views.paginator import paginator_for_cfg
 
 
 class TicketLogs(discord.ui.View):
@@ -39,7 +40,8 @@ class TicketLogs(discord.ui.View):
 
     @TaskDecorator.task("Paginate Send", False)
     async def paginate_send(self, interaction: discord.Interaction, data: list[str]):
-        paginate = Paginator()
+        cfg = await GuildConfigService.for_guild(interaction.guild_id)
+        paginate = paginator_for_cfg(cfg)
         paginate.title = f"{interaction.user.name}'s Tickets"
         paginate.sep = 5
         paginate.data = data
