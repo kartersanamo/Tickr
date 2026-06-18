@@ -24,7 +24,6 @@ class ManageConfig(commands.Cog):
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message(
                 "Administrator permission required.",
-                ephemeral=True,
             )
             return
         await open_manage_config(interaction, interaction.guild_id)

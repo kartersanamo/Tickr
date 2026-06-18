@@ -39,7 +39,9 @@ class SafeInteractionDecorator:
                         interaction=interaction,
                         component=component or func.__name__,
                     )
-                    await SafeInteractions.safe_reply(interaction, content=f"`❌` {msg}", ephemeral=True)
+                    await SafeInteractions.safe_reply(
+                        interaction, content=ErrorMessages.format_user_error(msg), ephemeral=True
+                    )
 
             return wrapper  # type: ignore
 

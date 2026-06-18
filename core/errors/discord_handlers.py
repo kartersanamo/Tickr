@@ -36,7 +36,9 @@ class DiscordErrorHandlers:
                 interaction=interaction,
                 component="slash_command",
             )
-            await SafeInteractions.safe_reply(interaction, content=f"`❌` {message}", ephemeral=True)
+            await SafeInteractions.safe_reply(
+                interaction, content=ErrorMessages.format_user_error(message), ephemeral=True
+            )
 
         @bot.event
         async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
@@ -56,7 +58,7 @@ class DiscordErrorHandlers:
                 component="prefix_command",
             )
             try:
-                await ctx.send(f"`❌` {message}", delete_after=15)
+                await ctx.send(ErrorMessages.format_user_error(message), delete_after=15)
             except discord.HTTPException:
                 pass
 

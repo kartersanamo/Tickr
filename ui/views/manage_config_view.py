@@ -118,6 +118,21 @@ def build_category_embed(
     return embed
 
 
+class ManageConfigView(discord.ui.View):
+    def __init__(self, guild_id: int, *, timeout: float = 900) -> None:
+        super().__init__(timeout=timeout)
+        self.guild_id = guild_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not getattr(interaction.user, "guild_permissions", None) or not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "Administrator permission required.",
+                ephemeral=True,
+            )
+            return False
+        return True
+
+
 class ConfigCategorySelect(discord.ui.Select):
     def __init__(self, guild_id: int) -> None:
         self.guild_id = guild_id
@@ -149,10 +164,9 @@ class ConfigCategorySelect(discord.ui.Select):
         await interaction.response.edit_message(embed=embed, view=view)
 
 
-class ManageConfigHomeView(discord.ui.View):
+class ManageConfigHomeView(ManageConfigView):
     def __init__(self, guild_id: int) -> None:
-        super().__init__(timeout=900)
-        self.guild_id = guild_id
+        super().__init__(guild_id)
         self.add_item(ConfigCategorySelect(guild_id))
 
 
@@ -240,10 +254,9 @@ class BackToCategoryButton(discord.ui.Button):
         await interaction.response.edit_message(embed=embed, view=ManageConfigCategoryView(self.guild_id, self.category))
 
 
-class ManageConfigCategoryView(discord.ui.View):
+class ManageConfigCategoryView(ManageConfigView):
     def __init__(self, guild_id: int, category: str) -> None:
-        super().__init__(timeout=900)
-        self.guild_id = guild_id
+        super().__init__(guild_id)
         self.category = category
         if FIELDS_BY_CATEGORY.get(category):
             self.add_item(ConfigFieldSelect(guild_id, category))
@@ -408,6 +421,12 @@ class ConfigTextModal(discord.ui.Modal):
         self.add_item(self.value_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        if not getattr(interaction.user, "guild_permissions", None) or not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "Administrator permission required.",
+                ephemeral=True,
+            )
+            return
         raw = self.value_input.value.strip()
         value: Any = raw or None
         if self.field.field_type == "integer":
@@ -485,7 +504,7 @@ def _channel_select(field: ConfigField, guild_id: int, category: str) -> discord
     return _Select()
 
 
-class ManageConfigFieldView(discord.ui.View):
+class ManageConfigFieldView(ManageConfigView):
     def __init__(
         self,
         guild_id: int,
@@ -495,8 +514,7 @@ class ManageConfigFieldView(discord.ui.View):
         current: Any = None,
         tickets_global_enabled: bool = True,
     ) -> None:
-        super().__init__(timeout=900)
-        self.guild_id = guild_id
+        super().__init__(guild_id)
         self.category = category
         self.field = field
 
@@ -539,5 +557,4 @@ async def open_manage_config(interaction: discord.Interaction, guild_id: int) ->
     await interaction.response.send_message(
         embed=embed,
         view=ManageConfigHomeView(guild_id),
-        ephemeral=True,
     )

@@ -12,6 +12,14 @@ from core.errors.exceptions import UserFacingError
 
 class ErrorMessages:
     DEFAULT_UNEXPECTED = "Something went wrong. Please try again later."
+    ERROR_PREFIX = "`❌`"
+
+    @classmethod
+    def format_user_error(cls, message: str) -> str:
+        text = message.strip()
+        if text.startswith(cls.ERROR_PREFIX):
+            return text
+        return f"{cls.ERROR_PREFIX} {message}"
 
     @classmethod
     def user_message_for(cls, error: BaseException) -> str:
