@@ -119,8 +119,7 @@ class Questions(discord.ui.Modal):
                     new_description += f"**{heading}**\n`{item.value}`\n \n"
                 else:
                     new_description += f"**{heading}**\n{item.value}\n \n"
-            if len(split) > 2:
-                new_description += "\n\n".join(split[2:])
+            new_description += "**One of our staff members will be with you shortly.**"
             embed = discord.Embed(description=new_description, color=embed_color(cfg))
             set_embed_footer(embed, cfg)
 
