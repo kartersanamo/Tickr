@@ -14,7 +14,7 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
+declare module "@auth/core/jwt" {
   interface JWT {
     accessToken?: string;
     guilds?: Array<{ id: string; name: string; permissions: string; icon?: string | null }>;

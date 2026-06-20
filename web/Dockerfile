@@ -16,6 +16,7 @@ ENV NEXT_PUBLIC_BOT_INVITE_URL=$NEXT_PUBLIC_BOT_INVITE_URL
 ENV NEXT_PUBLIC_DISCORD_CLIENT_ID=$NEXT_PUBLIC_DISCORD_CLIENT_ID
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
 RUN npm run build
 
 FROM base AS runner

@@ -18,7 +18,7 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   inviteUrl:
     process.env.NEXT_PUBLIC_BOT_INVITE_URL ||
-    "https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=268823744&scope=bot%20applications.commands",
+    "https://discord.com/oauth2/authorize?client_id=1517000402208293026&permissions=268823744&scope=bot%20applications.commands",
   features: [
     {
       title: "Quick Setup",
