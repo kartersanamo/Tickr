@@ -10,7 +10,6 @@ from core.bot_config import BotConfig
 from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_tasks
-from repositories.guild_repository import GuildRepository
 from services.embed_service import EmbedService
 from services.guild_config_service import GuildConfig, GuildConfigService
 from services.guild_helpers import embed_color
@@ -43,16 +42,11 @@ class TicketCreationService:
         owner_id: int,
         guild_id: int,
     ) -> None:
-        dashboard = GuildRepository().get_dashboard(guild_id)
         base_url = BotConfig.get("DASHBOARD_URL", "")
-        endpoint = (
-            (dashboard or {}).get("notify_url")
-            or os.getenv("DASHBOARD_TICKET_NOTIFY_URL", "").strip()
-            or (f"{base_url}/api/tickets/live-events" if base_url else "")
+        endpoint = os.getenv("DASHBOARD_TICKET_NOTIFY_URL", "").strip() or (
+            f"{base_url}/api/tickets/live-events" if base_url else ""
         )
-        secret = (dashboard or {}).get("api_secret") or BotConfig.get(
-            "TICKETS_BOT_API_SECRET"
-        )
+        secret = BotConfig.get("TICKETS_BOT_API_SECRET")
         if not endpoint or not secret:
             return
 

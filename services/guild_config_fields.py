@@ -21,8 +21,6 @@ FieldType = Literal[
     "integer",
     "json",
     "toggle",
-    "dashboard_url",
-    "dashboard_secret",
 ]
 
 
@@ -230,22 +228,6 @@ CONFIG_FIELDS: tuple[ConfigField, ...] = (
         category="integrations",
     ),
     ConfigField(
-        "dashboard_notify_url",
-        "__dashboard.notify_url",
-        "Dashboard Notify URL",
-        "Webhook/callback URL for dashboard ticket events.",
-        "dashboard_url",
-        category="integrations",
-    ),
-    ConfigField(
-        "dashboard_api_secret",
-        "__dashboard.api_secret",
-        "Dashboard API Secret",
-        "Shared secret for dashboard HTTP API.",
-        "dashboard_secret",
-        category="integrations",
-    ),
-    ConfigField(
         "tickets_enabled",
         "__system.tickets_global_enabled",
         "Tickets Globally Enabled",
@@ -341,15 +323,9 @@ def format_field_value(
     field: ConfigField,
     config: dict,
     *,
-    dashboard: dict | None = None,
     tickets_global_enabled: bool | None = None,
 ) -> str:
-    if field.path == "__dashboard.notify_url":
-        value = (dashboard or {}).get("notify_url")
-    elif field.path == "__dashboard.api_secret":
-        secret = (dashboard or {}).get("api_secret")
-        return "`Set`" if secret else "`Not set`"
-    elif field.path == "__system.tickets_global_enabled":
+    if field.path == "__system.tickets_global_enabled":
         if tickets_global_enabled is None:
             return "`Unknown`"
         return "`Enabled`" if tickets_global_enabled else "`Disabled`"
@@ -393,6 +369,4 @@ def format_field_value(
 
         text = json.dumps(value, indent=0)
         return f"```{text[:900]}{'...' if len(text) > 900 else ''}```"
-    if field.field_type == "dashboard_secret":
-        return "`Set`" if value else "`Not set`"
     return f"`{value}`"

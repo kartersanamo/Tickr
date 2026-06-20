@@ -16,6 +16,7 @@ class Setup(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
+        await GuildConfigService.for_guild(guild.id)
         try:
             owner = guild.owner
             if owner:

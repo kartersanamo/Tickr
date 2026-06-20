@@ -10,15 +10,24 @@ export const theme = {
   textMuted: "#9ca3af",
 } as const;
 
+const defaultClientId = "1517000402208293026";
+
+function buildInviteUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_BOT_INVITE_URL?.trim();
+  if (configured) {
+    return configured;
+  }
+  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID?.trim() || defaultClientId;
+  return `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=268823744&scope=bot%20applications.commands`;
+}
+
 export const siteConfig = {
   name: "Tickr",
   tagline: "Modern Discord ticket management for your server.",
   description:
     "Tickr is a multi-guild Discord ticket bot with setup wizards, transcripts, staff tools, and a web dashboard.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  inviteUrl:
-    process.env.NEXT_PUBLIC_BOT_INVITE_URL ||
-    "https://discord.com/oauth2/authorize?client_id=1517000402208293026&permissions=268823744&scope=bot%20applications.commands",
+  inviteUrl: buildInviteUrl(),
   features: [
     {
       title: "Quick Setup",

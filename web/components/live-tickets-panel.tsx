@@ -36,6 +36,8 @@ export function LiveTicketsPanel({ guildId }: Props) {
   const [closeReason, setCloseReason] = useState("");
   const [renameName, setRenameName] = useState("");
 
+  const [notice, setNotice] = useState("");
+
   const load = useCallback(async () => {
     try {
       const data = await tickrFetchClient(`/guilds/${guildId}/tickets/active`);
@@ -50,9 +52,43 @@ export function LiveTicketsPanel({ guildId }: Props) {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15000);
+    const interval = setInterval(load, 60000);
     return () => clearInterval(interval);
   }, [load]);
+
+  useEffect(() => {
+    const source = new EventSource(
+      `/api/tickets/live-events?guildId=${encodeURIComponent(guildId)}`,
+    );
+
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as {
+          kind?: string;
+          ticketNumber?: string;
+          ticketType?: string;
+        };
+        if (data.kind === "ticket_created") {
+          setNotice(
+            `New ticket #${data.ticketNumber ?? "?"} — ${data.ticketType ?? "ticket"}`,
+          );
+          void load();
+        }
+      } catch {
+        // ignore malformed events
+      }
+    };
+
+    return () => source.close();
+  }, [guildId, load]);
+
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+    const timer = setTimeout(() => setNotice(""), 8000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   async function closeTicket(ticket: Ticket) {
     if (closeReason.length < 2) {
@@ -97,6 +133,11 @@ export function LiveTicketsPanel({ guildId }: Props) {
           <RefreshCw size={16} /> Refresh
         </button>
       </div>
+      {notice && (
+        <div className="mb-4 rounded-lg border border-green-500/40 bg-green-500/10 px-4 py-2 text-green-100">
+          {notice}
+        </div>
+      )}
       {error && <div className="mb-4 text-red-300">{error}</div>}
       {tickets.length === 0 ? (
         <div className="glass-card p-8 text-center text-[var(--text-muted)]">No active tickets right now.</div>

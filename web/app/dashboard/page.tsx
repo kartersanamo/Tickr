@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { tickrFetch } from "@/lib/api-client";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { GuildCard } from "@/components/guild-card";
+import { siteConfig } from "@/lib/theme";
 
 type Guild = {
   id: string;
@@ -44,7 +45,7 @@ export default async function DashboardPage() {
             <p className="mb-4 text-[var(--text-secondary)]">
               No manageable servers found. Make sure Tickr is in your server and you have Administrator or Manage Server.
             </p>
-            <a href={process.env.NEXT_PUBLIC_BOT_INVITE_URL} className="btn-primary" target="_blank" rel="noreferrer">
+            <a href={siteConfig.inviteUrl} className="btn-primary" target="_blank" rel="noreferrer">
               Invite Tickr
             </a>
           </div>

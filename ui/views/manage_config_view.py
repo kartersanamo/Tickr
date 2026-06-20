@@ -21,17 +21,15 @@ from services.guild_config_service import GuildConfigService
 from services.guild_helpers import embed_color, normalize_embed_color, set_embed_footer
 
 
-async def _load_context(guild_id: int) -> tuple[dict, dict | None, bool]:
+async def _load_context(guild_id: int) -> tuple[dict, bool]:
     cfg = await GuildConfigService.for_guild(guild_id)
-    dashboard = await GuildConfigService.get_dashboard(guild_id)
-    return cfg.all(), dashboard, cfg.tickets_global_enabled
+    return cfg.all(), cfg.tickets_global_enabled
 
 
 def build_home_embed(
     guild: discord.Guild,
     config: dict,
     *,
-    dashboard: dict | None,
     tickets_global_enabled: bool,
 ) -> discord.Embed:
     merged = merge_defaults(config)
@@ -61,11 +59,6 @@ def build_home_embed(
             if field.required:
                 continue
             value = get_config_value(merged, field.path)
-            if field.path.startswith("__dashboard"):
-                if field.path.endswith("notify_url"):
-                    value = (dashboard or {}).get("notify_url")
-                else:
-                    value = (dashboard or {}).get("api_secret")
             if value in (None, "", []):
                 unset += 1
         lines.append(f"**{cat_label}** — {len(fields)} setting(s)")
@@ -89,7 +82,6 @@ def build_category_embed(
     category: str,
     config: dict,
     *,
-    dashboard: dict | None,
     tickets_global_enabled: bool,
 ) -> discord.Embed:
     merged = merge_defaults(config)
@@ -104,7 +96,6 @@ def build_category_embed(
             guild,
             field,
             merged,
-            dashboard=dashboard,
             tickets_global_enabled=tickets_global_enabled,
         )
         req = " *(required)*" if field.required else ""
@@ -156,12 +147,11 @@ class ConfigCategorySelect(discord.ui.Select):
         if interaction.guild is None:
             return
         category = self.values[0]
-        config, dashboard, enabled = await _load_context(self.guild_id)
+        config, enabled = await _load_context(self.guild_id)
         embed = build_category_embed(
             interaction.guild,
             category,
             config,
-            dashboard=dashboard,
             tickets_global_enabled=enabled,
         )
         view = ManageConfigCategoryView(self.guild_id, category)
@@ -195,15 +185,9 @@ class ConfigFieldSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         field = FIELDS_BY_KEY[self.values[0]]
-        config, dashboard, enabled = await _load_context(self.guild_id)
+        config, enabled = await _load_context(self.guild_id)
         merged = merge_defaults(config)
-        current: Any = None
-        if field.path.startswith("__dashboard"):
-            current = (dashboard or {}).get(
-                "notify_url" if field.path.endswith("notify_url") else "api_secret"
-            )
-        else:
-            current = get_config_value(merged, field.path)
+        current = get_config_value(merged, field.path)
         view = ManageConfigFieldView(
             self.guild_id,
             self.category,
@@ -231,11 +215,10 @@ class BackToCategoriesButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             return
-        config, dashboard, enabled = await _load_context(self.guild_id)
+        config, enabled = await _load_context(self.guild_id)
         embed = build_home_embed(
             interaction.guild,
             config,
-            dashboard=dashboard,
             tickets_global_enabled=enabled,
         )
         await interaction.response.edit_message(
@@ -254,12 +237,11 @@ class BackToCategoryButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction) -> None:
         if interaction.guild is None:
             return
-        config, dashboard, enabled = await _load_context(self.guild_id)
+        config, enabled = await _load_context(self.guild_id)
         embed = build_category_embed(
             interaction.guild,
             self.category,
             config,
-            dashboard=dashboard,
             tickets_global_enabled=enabled,
         )
         await interaction.response.edit_message(
@@ -330,20 +312,7 @@ async def _save_field(
     field: ConfigField,
     value: Any,
 ) -> None:
-    if field.path.startswith("__dashboard"):
-        dashboard = await GuildConfigService.get_dashboard(guild_id) or {}
-        notify = dashboard.get("notify_url")
-        secret = dashboard.get("api_secret")
-        if field.path.endswith("notify_url"):
-            notify = value
-        elif field.path.endswith("api_secret"):
-            secret = value
-        await GuildConfigService.save_dashboard(
-            guild_id,
-            notify_url=notify,
-            api_secret=secret,
-        )
-    elif field.field_type in ("role_list", "category_list"):
+    if field.field_type in ("role_list", "category_list"):
         await GuildConfigService.patch_config(guild_id, field.path, value or [])
     elif field.field_type == "integer":
         await GuildConfigService.patch_config(
@@ -388,20 +357,13 @@ async def _refresh_field_view(
 ) -> None:
     if interaction.guild is None:
         return
-    config, dashboard, enabled = await _load_context(guild_id)
+    config, enabled = await _load_context(guild_id)
     merged = merge_defaults(config)
-    current: Any = None
-    if field.path.startswith("__dashboard"):
-        current = (dashboard or {}).get(
-            "notify_url" if field.path.endswith("notify_url") else "api_secret"
-        )
-    else:
-        current = get_config_value(merged, field.path)
+    current = get_config_value(merged, field.path)
     current_display = format_field_value(
         interaction.guild,
         field,
         merged,
-        dashboard=dashboard,
         tickets_global_enabled=enabled,
     )
     description = f"{field.description}\n\n**Current:** {current_display}"
@@ -589,11 +551,10 @@ class ManageConfigFieldView(ManageConfigView):
 async def open_manage_config(interaction: discord.Interaction, guild_id: int) -> None:
     if interaction.guild is None:
         return
-    config, dashboard, enabled = await _load_context(guild_id)
+    config, enabled = await _load_context(guild_id)
     embed = build_home_embed(
         interaction.guild,
         config,
-        dashboard=dashboard,
         tickets_global_enabled=enabled,
     )
     await interaction.response.send_message(

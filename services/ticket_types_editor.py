@@ -185,6 +185,51 @@ def remove_question(
     return updated
 
 
+def update_question(
+    data: dict,
+    category: str,
+    type_name: str,
+    question_label: str,
+    *,
+    new_label: str | None = None,
+    placeholder: str | None = None,
+    length: str | None = None,
+) -> dict:
+    if category not in data or type_name not in data.get(category, {}):
+        raise ValueError("Ticket type not found.")
+    updated = copy.deepcopy(data)
+    questions = updated[category][type_name].get("Questions", [])
+    index = next(
+        (i for i, q in enumerate(questions) if q.get("Label") == question_label),
+        None,
+    )
+    if index is None:
+        raise ValueError(f"Question '{question_label}' not found.")
+    question = questions[index]
+    if new_label is not None:
+        clean = new_label.strip()[:45]
+        if not clean:
+            raise ValueError("Question label cannot be empty.")
+        if clean != question_label and any(q.get("Label") == clean for q in questions):
+            raise ValueError(f"Question '{clean}' already exists.")
+        question["Label"] = clean
+    if placeholder is not None:
+        question["Placeholder"] = placeholder[:100]
+    if length is not None:
+        question["Length"] = "Short" if length == "Short" else "Long"
+    return updated
+
+
+def set_ticket_emoji(
+    data: dict, category: str, type_name: str, emoji: str
+) -> dict:
+    if category not in data or type_name not in data.get(category, {}):
+        raise ValueError("Ticket type not found.")
+    updated = copy.deepcopy(data)
+    updated[category][type_name]["Emoji"] = emoji.strip() or "🎫"
+    return updated
+
+
 def set_private_mode(
     data: dict, category: str, type_name: str, mode: str | None
 ) -> dict:

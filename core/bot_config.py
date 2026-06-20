@@ -13,6 +13,15 @@ load_dotenv()
 class BotConfig:
     _instance: Optional["BotConfig"] = None
 
+    @staticmethod
+    def _normalize_site_url(url: str) -> str:
+        url = url.strip().rstrip("/")
+        if not url:
+            return ""
+        if not url.startswith(("http://", "https://")):
+            return f"https://{url}"
+        return url
+
     def __init__(self) -> None:
         self.settings: dict[str, Any] = {
             "TOKEN": os.getenv("DISCORD_TOKEN"),
@@ -21,7 +30,7 @@ class BotConfig:
             "TRANSCRIPT_PASTE_SUFFIX": os.getenv(
                 "TRANSCRIPT_PASTE_SUFFIX", "/documents"
             ),
-            "DASHBOARD_URL": os.getenv("DASHBOARD_URL", "").rstrip("/"),
+            "DASHBOARD_URL": self._normalize_site_url(os.getenv("DASHBOARD_URL", "")),
             "TICKETS_BOT_API_SECRET": os.getenv("TICKETS_BOT_API_SECRET")
             or os.getenv("CONTROL_API_SECRET"),
             "TICKETS_BOT_API_PORT": int(os.getenv("TICKETS_BOT_API_PORT", "8788")),

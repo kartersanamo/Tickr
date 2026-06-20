@@ -63,6 +63,17 @@ class QuestionBody(BaseModel):
     length: str = "Long"
 
 
+class QuestionPatchBody(BaseModel):
+    label: str | None = None
+    placeholder: str | None = None
+    length: str | None = None
+    newLabel: str | None = None
+
+
+class EmojiBody(BaseModel):
+    emoji: str
+
+
 class TypeUpdateBody(BaseModel):
     data: dict[str, Any]
 
@@ -229,7 +240,34 @@ async def update_type(
         raise HTTPException(status_code=404, detail="Ticket type not found")
     updated = dict(data)
     updated[category] = dict(updated[category])
-    updated[category][type_name] = body.data
+    merged = dict(updated[category][type_name])
+    merged.update(body.data)
+    if "Emoji" in body.data:
+        merged["Emoji"] = updated[category][type_name].get("Emoji", "🎫")
+    updated[category][type_name] = merged
+    await _save_types(guild_id, updated)
+    return {"ok": True}
+
+
+@router.patch(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/emoji"
+)
+async def update_type_emoji(
+    guild_id: int,
+    category: str,
+    type_name: str,
+    body: EmojiBody,
+    user: SessionUser = Depends(get_current_user),
+) -> dict[str, Any]:
+    if not await can_manage_guild(user, guild_id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    cfg = await GuildConfigService.for_guild(guild_id)
+    try:
+        updated = editor.set_ticket_emoji(
+            cfg.tickets_raw(), category, type_name, body.emoji
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     await _save_types(guild_id, updated)
     return {"ok": True}
 
@@ -252,6 +290,36 @@ async def add_question(
     )
     try:
         updated = editor.add_question(cfg.tickets_raw(), category, type_name, question)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await _save_types(guild_id, updated)
+    return {"ok": True}
+
+
+@router.patch(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/questions/{label}"
+)
+async def patch_question(
+    guild_id: int,
+    category: str,
+    type_name: str,
+    label: str,
+    body: QuestionPatchBody,
+    user: SessionUser = Depends(get_current_user),
+) -> dict[str, Any]:
+    if not await can_manage_guild(user, guild_id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    cfg = await GuildConfigService.for_guild(guild_id)
+    try:
+        updated = editor.update_question(
+            cfg.tickets_raw(),
+            category,
+            type_name,
+            label,
+            new_label=body.newLabel or body.label,
+            placeholder=body.placeholder,
+            length=body.length,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await _save_types(guild_id, updated)

@@ -5,14 +5,12 @@ services:
       dockerfile: api/Dockerfile
     container_name: tickr-api
     restart: unless-stopped
+    network_mode: host
     env_file:
       - .env.dashboard
-    ports:
-      - "8790:8790"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
-      TICKETS_BOT_API_URL: http://host.docker.internal:8788
+      TICKETS_BOT_API_URL: http://127.0.0.1:8788
+      DB_HOST: 127.0.0.1
 
   tickr-web:
     build:
@@ -24,11 +22,12 @@ services:
         NEXT_PUBLIC_DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
     container_name: tickr-web
     restart: unless-stopped
+    network_mode: host
     env_file:
       - .env.dashboard
-    ports:
-      - "8005:3000"
     depends_on:
       - tickr-api
     environment:
-      TICKR_API_URL: http://tickr-api:8790
+      PORT: 8005
+      HOSTNAME: 0.0.0.0
+      TICKR_API_URL: http://127.0.0.1:8790

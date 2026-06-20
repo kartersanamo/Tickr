@@ -48,12 +48,6 @@ async def config_schema(
     }
 
 
-def _mask_secret(value: str | None) -> str | None:
-    if not value:
-        return None
-    return "********"
-
-
 @router.get("/guilds/{guild_id}/config")
 async def get_config(
     guild_id: int, user: SessionUser = Depends(get_current_user)
@@ -62,15 +56,8 @@ async def get_config(
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)
     merged = merge_defaults(cfg.all())
-    dashboard = await GuildConfigService.get_dashboard(guild_id) or {}
     values: dict[str, Any] = {}
     for field in CONFIG_FIELDS:
-        if field.path.startswith("__dashboard"):
-            if field.path.endswith("notify_url"):
-                values[field.key] = dashboard.get("notify_url")
-            elif field.path.endswith("api_secret"):
-                values[field.key] = _mask_secret(dashboard.get("api_secret"))
-            continue
         if field.path == "__system.tickets_global_enabled":
             values[field.key] = cfg.tickets_global_enabled
             continue
@@ -99,19 +86,6 @@ async def patch_config(
         field = FIELDS_BY_KEY.get(key)
         if field is None:
             raise HTTPException(status_code=400, detail=f"Unknown field: {key}")
-        if field.path.startswith("__dashboard"):
-            dashboard = await GuildConfigService.get_dashboard(guild_id) or {}
-            notify = dashboard.get("notify_url")
-            secret = dashboard.get("api_secret")
-            if field.path.endswith("notify_url"):
-                notify = value or None
-            elif field.path.endswith("api_secret"):
-                if value and value != "********":
-                    secret = value
-            await GuildConfigService.save_dashboard(
-                guild_id, notify_url=notify, api_secret=secret
-            )
-            continue
         if field.path == "__system.tickets_global_enabled":
             await GuildConfigService.set_tickets_global_enabled(guild_id, bool(value))
             continue

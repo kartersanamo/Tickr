@@ -201,23 +201,6 @@ export function ConfigEditor({
       );
     }
 
-    if (field.fieldType === "dashboard_secret") {
-      return (
-        <div key={field.key} className="glass-card mb-4 p-5">
-          <h3 className="mb-1 font-semibold">{field.label}</h3>
-          {common}
-          <input
-            type="password"
-            className="input-field"
-            placeholder={value === "********" ? "Leave blank to keep current" : "Enter secret"}
-            onBlur={(e) => {
-              if (e.target.value) saveField(field.key, e.target.value);
-            }}
-          />
-        </div>
-      );
-    }
-
     return (
       <div key={field.key} className="glass-card mb-4 p-5">
         <h3 className="mb-1 font-semibold">
