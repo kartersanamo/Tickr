@@ -1,0 +1,22 @@
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "G004",
+]
+
+[lint.per-file-ignores]
+"scripts/*" = ["E402"]
+"tests/*" = ["S101"]
+
+[format]
+quote-style = "double"

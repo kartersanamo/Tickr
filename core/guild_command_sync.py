@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import discord
@@ -38,7 +39,9 @@ class GuildCommandSync:
 
     @classmethod
     async def _sync_global(
-        cls, bot: "commands.Bot", warn
+        cls,
+        bot: "commands.Bot",
+        warn: Callable[[str], None],
     ) -> list[discord.app_commands.AppCommand]:
         try:
             return await bot.tree.sync()
@@ -53,7 +56,10 @@ class GuildCommandSync:
 
     @classmethod
     async def sync_commands(
-        cls, bot: "commands.Bot", *, log=None
+        cls,
+        bot: "commands.Bot",
+        *,
+        log: logging.Logger | None = None,
     ) -> list[discord.app_commands.AppCommand]:
         info = log.info if log else cls._logger.info
         warn = log.warning if log else cls._logger.warning

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from mysql.connector import pooling
-from typing import Any, Optional
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
-from core.errors.db import DatabaseErrors
+from mysql.connector import pooling
+
 from core.config import ConfigManager
+from core.errors.db import DatabaseErrors
 from core.loggers import log_tasks
-
 
 log = logging.getLogger(name="Tasks")
 
@@ -17,11 +17,11 @@ _DB_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="tickets-db"
 
 
 class DatabasePool:
-    _instance: Optional["DatabasePool"] = None
-    _pool: Optional[pooling.MySQLConnectionPool] = None
+    _instance: DatabasePool | None = None
+    _pool: pooling.MySQLConnectionPool | None = None
 
     @classmethod
-    def get(cls) -> "DatabasePool":
+    def get(cls) -> DatabasePool:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
@@ -41,12 +41,17 @@ class DatabasePool:
         if self._pool is None:
             cfg = self._pool_config()
             self._pool = pooling.MySQLConnectionPool(
-                pool_name="tickr_tickets", pool_size=8, pool_reset_session=True, **cfg
+                pool_name="tickr_tickets",
+                pool_size=8,
+                pool_reset_session=True,
+                **cfg,
             )
         return self._pool
 
-    def _execute_query(self, query: str, params: tuple | None = None) -> list:
-        rows: list = []
+    def _execute_query(
+        self, query: str, params: tuple[Any, ...] | None = None
+    ) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
         connection = None
         try:
             connection = self._ensure_pool().get_connection()
@@ -66,14 +71,14 @@ class DatabasePool:
         return rows
 
     @staticmethod
-    def execute(query: str, params: tuple | None = None) -> list:
+    def execute(query: str, params: tuple[Any, ...] | None = None) -> list[dict[str, Any]]:
         return DatabasePool.get()._execute_query(query, params)
 
 
-def execute(query: str, params: tuple | None = None) -> list:
+def execute(query: str, params: tuple[Any, ...] | None = None) -> list[dict[str, Any]]:
     return DatabasePool.execute(query, params)
 
 
-async def aexecute(query: str, params: tuple | None = None) -> list:
+async def aexecute(query: str, params: tuple[Any, ...] | None = None) -> list[dict[str, Any]]:
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(_DB_EXECUTOR, execute, query, params)

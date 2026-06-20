@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 
 import discord
 from discord import app_commands
@@ -19,9 +19,9 @@ from ui.views.tickets_view import TicketsView
 from ui.views.tickets_view2_view import TicketsView2
 
 COG_FILES: list[str] = [
-    f.split(".")[0].title()
-    for f in os.listdir("cogs/")
-    if f.endswith(".py") and not f.startswith("_")
+    path.stem.title()
+    for path in Path("cogs").iterdir()
+    if path.suffix == ".py" and not path.name.startswith("_")
 ]
 
 
@@ -103,30 +103,35 @@ class Client(commands.Bot):
         await DashboardHttp.start(client=self)
 
     def _register_reload_command(self) -> None:
-        bot = self
-
         @app_commands.guild_only()
         @app_commands.describe(cog="The cog to reload")
-        @app_commands.autocomplete(cog=bot.cog_autocomplete)
-        @bot.tree.command(name="tickr-reload", description="Reloads a Tickr cog")
+        @app_commands.autocomplete(cog=self.cog_autocomplete)
+        @self.tree.command(name="tickr-reload", description="Reloads a Tickr cog")
         async def tickr_reload_slash(
-            interaction: discord.Interaction, cog: str
+            interaction: discord.Interaction,
+            cog: str,
         ) -> None:
-            await bot.tickr_reload_command(interaction, cog)
+            await self.tickr_reload_command(interaction, cog)
+
+        self._reload_command = tickr_reload_slash
 
     @TaskDecorator.task(action_name="Tickr Reload Command", log=True)
     async def tickr_reload_command(
-        self, interaction: discord.Interaction, cog: str
+        self,
+        interaction: discord.Interaction,
+        cog: str,
     ) -> None:
         if cog not in COG_FILES:
             await interaction.response.send_message(
-                f"Invalid cog **{cog}.py**", ephemeral=True
+                f"Invalid cog **{cog}.py**",
+                ephemeral=True,
             )
             return
         try:
             await self.reload_extension(f"cogs.{cog.lower()}")
             await interaction.response.send_message(
-                f"Reloaded **{cog}.py**", ephemeral=True
+                f"Reloaded **{cog}.py**",
+                ephemeral=True,
             )
 
         except (
@@ -137,11 +142,14 @@ class Client(commands.Bot):
         ) as exc:
             log_commands.error(f"Reload failed for {cog}: {exc}")
             await interaction.response.send_message(
-                f"Failed to reload **{cog}.py**", ephemeral=True
+                f"Failed to reload **{cog}.py**",
+                ephemeral=True,
             )
 
     async def cog_autocomplete(
-        self, _: discord.Interaction, current: str
+        self,
+        _: discord.Interaction,
+        current: str,
     ) -> list[app_commands.Choice[str]]:
         return [
             app_commands.Choice(name=cog, value=cog)
@@ -152,7 +160,9 @@ class Client(commands.Bot):
     @TaskDecorator.task(action_name="Setup Hook")
     async def setup_hook(self) -> None:
         await ErrorSetup.wire_bot_async_setup(
-            bot=self, bot_name="Tickr", log_tasks=log_tasks
+            bot=self,
+            bot_name="Tickr",
+            log_tasks=log_tasks,
         )
         self.app = BotApp.from_bot(self)
         self._register_reload_command()
@@ -174,7 +184,8 @@ client = Client()
 
 TOKEN = BotConfig.get("TOKEN")
 if not TOKEN:
-    raise ValueError("Set DISCORD_TOKEN in .env")
+    missing_env_message: str = "Set DISCORD_TOKEN in .env"
+    raise ValueError(missing_env_message)
 
 if __name__ == "__main__":
     client.run(token=TOKEN, log_handler=None)
