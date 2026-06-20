@@ -40,7 +40,11 @@ def normalize_embed_color(raw: str | None) -> str:
 
 
 def embed_color(cfg: Any) -> discord.Color:
-    raw = cfg.get("EMBED_COLOR", DEFAULT_EMBED_COLOR) if hasattr(cfg, "get") else DEFAULT_EMBED_COLOR
+    raw = (
+        cfg.get("EMBED_COLOR", DEFAULT_EMBED_COLOR)
+        if hasattr(cfg, "get")
+        else DEFAULT_EMBED_COLOR
+    )
     return discord.Color.from_str(normalize_embed_color(raw))
 
 
@@ -51,7 +55,9 @@ def embed_color_int(cfg: Any) -> int:
 def set_embed_footer(embed: discord.Embed, cfg: Any) -> None:
     logo = cfg.get("LOGO") if hasattr(cfg, "get") else None
     logo_url = EmbedService.get_logo_url(logo)
-    footer = cfg.get("FOOTER", "Tickr Tickets") if hasattr(cfg, "get") else "Tickr Tickets"
+    footer = (
+        cfg.get("FOOTER", "Tickr Tickets") if hasattr(cfg, "get") else "Tickr Tickets"
+    )
     embed.set_footer(text=footer, icon_url=logo_url)
 
 

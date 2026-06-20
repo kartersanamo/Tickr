@@ -1,4 +1,5 @@
 """Decorators for safe UI callbacks and tasks."""
+
 from __future__ import annotations
 
 import functools
@@ -40,7 +41,9 @@ class SafeInteractionDecorator:
                         component=component or func.__name__,
                     )
                     await SafeInteractions.safe_reply(
-                        interaction, content=ErrorMessages.format_user_error(msg), ephemeral=True
+                        interaction,
+                        content=ErrorMessages.format_user_error(msg),
+                        ephemeral=True,
                     )
 
             return wrapper  # type: ignore

@@ -1,4 +1,5 @@
 """Ticket message analytics."""
+
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +25,9 @@ class TicketAnalytics(commands.Cog):
                 return True
         return member.guild_permissions.manage_messages
 
-    def _record_message(self, guild_id: int, channel_id: int, *, is_staff: bool) -> None:
+    def _record_message(
+        self, guild_id: int, channel_id: int, *, is_staff: bool
+    ) -> None:
         analytics.record_ticket_message(guild_id, str(channel_id), is_staff=is_staff)
 
     @commands.Cog.listener()

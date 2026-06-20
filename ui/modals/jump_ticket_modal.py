@@ -25,7 +25,9 @@ class JumpTicketModal(discord.ui.Modal, title="Jump to ticket #"):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         raw = (self.number.value or "").strip()
-        row = TicketLogService.fetch_row_by_number(self._state.target.id, self._state.mode, raw)
+        row = TicketLogService.fetch_row_by_number(
+            self._state.target.id, self._state.mode, raw
+        )
         if not row:
             await interaction.response.send_message(
                 f"No matching closed ticket **#{TicketLogService.truncate(raw, 32)}** for this perspective.",

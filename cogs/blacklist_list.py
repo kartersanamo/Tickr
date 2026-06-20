@@ -1,4 +1,5 @@
 """blacklist_list.py — List ticket blacklisted users."""
+
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -14,7 +15,9 @@ class BlacklistList(commands.Cog):
         self.client: commands.Bot = client
 
     @TaskDecorator.task("Send Paginator")
-    async def send_paginator(self, interaction: discord.Interaction, data: list) -> None:
+    async def send_paginator(
+        self, interaction: discord.Interaction, data: list
+    ) -> None:
         cfg = await GuildConfigService.for_guild(interaction.guild_id)
         paginate = paginator_for_cfg(cfg)
         paginate.title = "Blacklisted Users"
@@ -23,7 +26,9 @@ class BlacklistList(commands.Cog):
         await paginate.send(interaction)
 
     @TaskDecorator.task("Get Blacklist Data")
-    async def get_blacklist_data(self, interaction: discord.Interaction, rows: list) -> list:
+    async def get_blacklist_data(
+        self, interaction: discord.Interaction, rows: list
+    ) -> list:
         blacklist_data: list = []
         for row in rows:
             user_id = int(row["user_id"])
@@ -42,7 +47,9 @@ class BlacklistList(commands.Cog):
         return blacklist_data or ["No data found."]
 
     @app_commands.guild_only()
-    @app_commands.command(name="blacklist-list", description="Shows all users blacklisted from tickets")
+    @app_commands.command(
+        name="blacklist-list", description="Shows all users blacklisted from tickets"
+    )
     async def blacklistlist(self, interaction: discord.Interaction) -> None:
         await self.blacklistlist_command(interaction)
 

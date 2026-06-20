@@ -1,4 +1,5 @@
 """Guild config schema and CRUD routes."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -14,7 +15,6 @@ from services.guild_config_fields import (
     FIELDS_BY_KEY,
     get_config_value,
     merge_defaults,
-    set_config_value,
     validate_required,
 )
 from services.guild_config_service import GuildConfigService
@@ -37,7 +37,9 @@ def _field_to_dict(field) -> dict[str, Any]:
 
 
 @router.get("/guilds/{guild_id}/config/schema")
-async def config_schema(guild_id: int, user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def config_schema(
+    guild_id: int, user: SessionUser = Depends(get_current_user)
+) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     return {
@@ -53,7 +55,9 @@ def _mask_secret(value: str | None) -> str | None:
 
 
 @router.get("/guilds/{guild_id}/config")
-async def get_config(guild_id: int, user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def get_config(
+    guild_id: int, user: SessionUser = Depends(get_current_user)
+) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)
@@ -104,7 +108,9 @@ async def patch_config(
             elif field.path.endswith("api_secret"):
                 if value and value != "********":
                     secret = value
-            await GuildConfigService.save_dashboard(guild_id, notify_url=notify, api_secret=secret)
+            await GuildConfigService.save_dashboard(
+                guild_id, notify_url=notify, api_secret=secret
+            )
             continue
         if field.path == "__system.tickets_global_enabled":
             await GuildConfigService.set_tickets_global_enabled(guild_id, bool(value))

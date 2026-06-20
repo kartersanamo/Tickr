@@ -1,4 +1,5 @@
 """One-call wiring for bot main modules."""
+
 from __future__ import annotations
 
 import logging
@@ -31,4 +32,6 @@ class ErrorSetup:
         bot_name: str,
         log_tasks: logging.Logger,
     ) -> None:
-        DiscordErrorHandlers.install_asyncio_exception_handler(bot, log_tasks=log_tasks, bot_name=bot_name)
+        DiscordErrorHandlers.install_asyncio_exception_handler(
+            bot, log_tasks=log_tasks, bot_name=bot_name
+        )

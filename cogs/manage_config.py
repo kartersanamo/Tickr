@@ -1,4 +1,5 @@
 """manage_config.py — Full guild configuration editor."""
+
 from __future__ import annotations
 
 import discord

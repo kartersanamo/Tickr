@@ -1,4 +1,5 @@
 """rename.py — Rename ticket channel."""
+
 from discord.ext import commands
 from discord import app_commands
 import asyncio
@@ -43,7 +44,9 @@ class Rename(commands.Cog):
 
     @TaskDecorator.task("Rename Command", True)
     async def rename_command(self, interaction: discord.Interaction, name: str) -> None:
-        if interaction.guild_id is None or not isinstance(interaction.channel, discord.TextChannel):
+        if interaction.guild_id is None or not isinstance(
+            interaction.channel, discord.TextChannel
+        ):
             return
         cfg = await GuildConfigService.for_guild(interaction.guild_id)
         channel = interaction.channel
@@ -56,10 +59,14 @@ class Rename(commands.Cog):
                 channel,
             )
             if position != channel.position:
-                channel = await asyncio.wait_for(channel.edit(position=position), timeout=5.0)
+                channel = await asyncio.wait_for(
+                    channel.edit(position=position), timeout=5.0
+                )
         await self.send_embed(interaction, old_name, name, cfg)
 
-    async def edit_channel_name(self, guild_id: int, channel_id: int, name: str) -> None:
+    async def edit_channel_name(
+        self, guild_id: int, channel_id: int, name: str
+    ) -> None:
         guild = self.client.get_guild(guild_id)
         if guild is None:
             return

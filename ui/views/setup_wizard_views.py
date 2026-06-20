@@ -1,4 +1,5 @@
 """Expanded first-time setup wizard views."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -47,9 +48,13 @@ class SetupView(discord.ui.View):
         self.state = SetupState(guild_id=guild_id)
 
     @discord.ui.button(label="Start Setup", style=discord.ButtonStyle.green)
-    async def start(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def start(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("Administrator permission required.", ephemeral=True)
+            await interaction.response.send_message(
+                "Administrator permission required.", ephemeral=True
+            )
             return
         await interaction.response.send_message(
             "**Step 1/11 — Staff role**\nSelect the role that manages tickets and gets pinged:",
@@ -74,7 +79,9 @@ class StaffRoleView(discord.ui.View):
     def __init__(self, state: SetupState) -> None:
         super().__init__(timeout=900)
         self.state = state
-        self.add_item(StaffRoleSelect(placeholder="Staff role...", min_values=1, max_values=1))
+        self.add_item(
+            StaffRoleSelect(placeholder="Staff role...", min_values=1, max_values=1)
+        )
 
 
 class AdminPermsRoleSelect(discord.ui.RoleSelect):
@@ -92,7 +99,11 @@ class AdminPermsRoleView(discord.ui.View):
     def __init__(self, state: SetupState) -> None:
         super().__init__(timeout=900)
         self.state = state
-        self.add_item(AdminPermsRoleSelect(placeholder="Admin perms role...", min_values=1, max_values=1))
+        self.add_item(
+            AdminPermsRoleSelect(
+                placeholder="Admin perms role...", min_values=1, max_values=1
+            )
+        )
 
 
 class LogChannelSelect(discord.ui.ChannelSelect):
@@ -192,11 +203,15 @@ class AdminPrivateCategoryView(discord.ui.View):
         )
 
     @discord.ui.button(label="Skip", style=discord.ButtonStyle.secondary, row=1)
-    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def skip(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await _goto_management_private(interaction, self.state)
 
 
-async def _goto_management_private(interaction: discord.Interaction, state: SetupState) -> None:
+async def _goto_management_private(
+    interaction: discord.Interaction, state: SetupState
+) -> None:
     await interaction.response.send_message(
         "**Step 7/11 — Management private category (optional)**",
         view=ManagementPrivateCategoryView(state),
@@ -225,11 +240,15 @@ class ManagementPrivateCategoryView(discord.ui.View):
         )
 
     @discord.ui.button(label="Skip", style=discord.ButtonStyle.secondary, row=1)
-    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def skip(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await _goto_verified_role(interaction, self.state)
 
 
-async def _goto_verified_role(interaction: discord.Interaction, state: SetupState) -> None:
+async def _goto_verified_role(
+    interaction: discord.Interaction, state: SetupState
+) -> None:
     await interaction.response.send_message(
         "**Step 8/11 — Verified role (optional)**\n"
         "Require a role before members can open tickets:",
@@ -254,10 +273,16 @@ class VerifiedRoleView(discord.ui.View):
     def __init__(self, state: SetupState) -> None:
         super().__init__(timeout=900)
         self.state = state
-        self.add_item(VerifiedRoleSelect(placeholder="Verified role...", min_values=1, max_values=1))
+        self.add_item(
+            VerifiedRoleSelect(
+                placeholder="Verified role...", min_values=1, max_values=1
+            )
+        )
 
     @discord.ui.button(label="Skip", style=discord.ButtonStyle.secondary, row=1)
-    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def skip(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await _goto_branding(interaction, self.state)
 
 
@@ -327,12 +352,16 @@ class TemplateView(discord.ui.View):
         self.state = state
 
     @discord.ui.button(label="Use Default Template", style=discord.ButtonStyle.primary)
-    async def use_template(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def use_template(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         self.state.use_template = True
         await finish_setup(interaction, self.state)
 
     @discord.ui.button(label="Start Empty", style=discord.ButtonStyle.secondary)
-    async def start_empty(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def start_empty(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         self.state.use_template = False
         await finish_setup(interaction, self.state)
 
@@ -357,15 +386,21 @@ async def finish_setup(interaction: discord.Interaction, state: SetupState) -> N
     config["TICKET_CATEGORIES"] = state.ticket_category_ids
 
     if state.admin_private_category_id:
-        config["CHANNEL_IDS"]["ADMIN_PRIVATE_CATEGORY_ID"] = state.admin_private_category_id
+        config["CHANNEL_IDS"]["ADMIN_PRIVATE_CATEGORY_ID"] = (
+            state.admin_private_category_id
+        )
     if state.management_private_category_id:
-        config["CHANNEL_IDS"]["MANAGEMENT_PRIVATE_CATEGORY_ID"] = state.management_private_category_id
+        config["CHANNEL_IDS"]["MANAGEMENT_PRIVATE_CATEGORY_ID"] = (
+            state.management_private_category_id
+        )
     if state.admin_ticket_logs_id:
         config["CHANNEL_IDS"]["ADMIN_TICKET_LOGS_ID"] = state.admin_ticket_logs_id
     else:
         config["CHANNEL_IDS"]["ADMIN_TICKET_LOGS_ID"] = state.log_channel_id
     if state.management_ticket_logs_id:
-        config["CHANNEL_IDS"]["MANAGEMENT_TICKET_LOGS_ID"] = state.management_ticket_logs_id
+        config["CHANNEL_IDS"]["MANAGEMENT_TICKET_LOGS_ID"] = (
+            state.management_ticket_logs_id
+        )
     else:
         config["CHANNEL_IDS"]["MANAGEMENT_TICKET_LOGS_ID"] = state.log_channel_id
     if state.verified_role_id:
@@ -398,7 +433,9 @@ async def finish_setup(interaction: discord.Interaction, state: SetupState) -> N
     else:
         ticket_types = {"TOGGLE_STATUS": "Enabled"}
 
-    await GuildConfigService.create_guild(state.guild_id, config, ticket_types, configured=True)
+    await GuildConfigService.create_guild(
+        state.guild_id, config, ticket_types, configured=True
+    )
     await GuildConfigService.set_configured(state.guild_id, True)
 
     missing = validate_required(merge_defaults(config))

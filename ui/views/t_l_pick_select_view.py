@@ -10,7 +10,9 @@ from ui.views.ticket_logs_v2_support import TicketLogsV2Support
 
 
 class TLPickSelect(discord.ui.Select):
-    def __init__(self, state: TicketLogUIState, slice_rows: List[Dict[str, Any]], total: int) -> None:
+    def __init__(
+        self, state: TicketLogUIState, slice_rows: List[Dict[str, Any]], total: int
+    ) -> None:
         self._state = state
         if not slice_rows:
             super().__init__(
@@ -32,7 +34,11 @@ class TLPickSelect(discord.ui.Select):
             name = (str(row.get("name") or "—")).replace("\n", " ")
             ts = TicketLogService.safe_int_ts(row.get(state.sort_key))
             label = TicketLogService.truncate(f"{idx}. #{num} · {typ} · {name}", 100)
-            desc = TicketLogService.format_select_option_date(ts) if ts is not None else "Unknown date"
+            desc = (
+                TicketLogService.format_select_option_date(ts)
+                if ts is not None
+                else "Unknown date"
+            )
             opts.append(
                 discord.SelectOption(
                     label=label,

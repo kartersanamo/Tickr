@@ -1,4 +1,5 @@
 """Shared analytics event logger for Minecadia bots."""
+
 from __future__ import annotations
 
 import logging
@@ -38,6 +39,7 @@ TOTAL_STAT_FIELDS = frozenset(
         "punishment_requests",
     }
 )
+
 
 class AnalyticsLogger:
     @staticmethod
@@ -117,7 +119,9 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def increment_total_stat(cls, guild_id: int, user_id: str, field: str, delta: int = 1) -> None:
+    def increment_total_stat(
+        cls, guild_id: int, user_id: str, field: str, delta: int = 1
+    ) -> None:
         """Mirror staff/stat counters into all-time total_statistics (never wiped)."""
         if field not in TOTAL_STAT_FIELDS or delta == 0:
             return
@@ -144,8 +148,8 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_staff_message(cls, 
-        user_id: str, channel_id: str, char_count: int = 0
+    def record_staff_message(
+        cls, user_id: str, channel_id: str, char_count: int = 0
     ) -> None:
         """#1 — Staff message in a tracked channel."""
         cls._execute(
@@ -155,11 +159,18 @@ class AnalyticsLogger:
                ON DUPLICATE KEY UPDATE
                  message_count = message_count + 1,
                  character_count = character_count + VALUES(character_count)""",
-            (cls._today(), str(user_id), str(channel_id), char_count,),
+            (
+                cls._today(),
+                str(user_id),
+                str(channel_id),
+                char_count,
+            ),
         )
 
     @classmethod
-    def record_ticket_message(cls, guild_id: int, channel_id: str, *, is_staff: bool) -> None:
+    def record_ticket_message(
+        cls, guild_id: int, channel_id: str, *, is_staff: bool
+    ) -> None:
         """#2 — Message in an open ticket channel."""
         col = "staff_messages" if is_staff else "owner_messages"
         cls._execute(
@@ -177,7 +188,8 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_member_event(cls, 
+    def record_member_event(
+        cls,
         event_type: str,
         user_id: str,
         *,
@@ -201,9 +213,7 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_voice_seconds(cls, 
-        user_id: str, channel_id: str, seconds: int
-    ) -> None:
+    def record_voice_seconds(cls, user_id: str, channel_id: str, seconds: int) -> None:
         """#4 — Voice time rollup."""
         if seconds <= 0:
             return
@@ -227,7 +237,8 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_mod_action(cls, 
+    def record_mod_action(
+        cls,
         action_type: str,
         actor_id: str,
         target_id: str,
@@ -253,8 +264,8 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_poll_vote(cls, 
-        poll_message_id: str, user_id: str, option_index: int
+    def record_poll_vote(
+        cls, poll_message_id: str, user_id: str, option_index: int
     ) -> None:
         """#8 — Poll vote (upsert)."""
         cls._execute(
@@ -267,7 +278,8 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_game_outcome(cls, 
+    def record_game_outcome(
+        cls,
         game_name: str,
         outcome: str,
         *,
@@ -303,7 +315,8 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def record_server_snapshot(cls, 
+    def record_server_snapshot(
+        cls,
         member_count: int,
         online_count: int,
         boost_tier: int,
@@ -331,7 +344,9 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def patch_blacklist_created_at(cls, user_id: str, created_at: Optional[int] = None) -> None:
+    def patch_blacklist_created_at(
+        cls, user_id: str, created_at: Optional[int] = None
+    ) -> None:
         """#7 — Set created_at on new blacklist rows."""
         ts = created_at or cls._now()
         cls._execute(
@@ -340,7 +355,9 @@ class AnalyticsLogger:
         )
 
     @classmethod
-    def patch_poll_created_at(cls, message_id: str, created_at: Optional[int] = None) -> None:
+    def patch_poll_created_at(
+        cls, message_id: str, created_at: Optional[int] = None
+    ) -> None:
         ts = created_at or cls._now()
         cls._execute(
             "UPDATE polls SET created_at = %s WHERE message_id = %s AND (created_at IS NULL OR created_at = 0)",

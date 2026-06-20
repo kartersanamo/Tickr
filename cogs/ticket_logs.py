@@ -1,4 +1,5 @@
 """ticket_logs.py — Components V2 closed ticket browser."""
+
 from __future__ import annotations
 
 from typing import Any, Dict
@@ -19,7 +20,9 @@ class TicketLogsCog(commands.Cog):
         self.client = client
 
     @TaskDecorator.task(action_name="Ticket Logs Command", log=True)
-    async def ticket_logs_command(self, interaction: discord.Interaction, user: discord.Member) -> None:
+    async def ticket_logs_command(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> None:
         await interaction.response.defer()
         if interaction.guild_id is None:
             return
@@ -46,9 +49,14 @@ class TicketLogsCog(commands.Cog):
         await interaction.edit_original_response(**kwargs)
 
     @app_commands.guild_only()
-    @app_commands.command(name="ticket-logs", description="Browse closed tickets for a member (Components V2)")
+    @app_commands.command(
+        name="ticket-logs",
+        description="Browse closed tickets for a member (Components V2)",
+    )
     @app_commands.describe(user="Member to look up")
-    async def ticketlogs(self, interaction: discord.Interaction, user: discord.Member) -> None:
+    async def ticketlogs(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> None:
         await self.ticket_logs_command(interaction, user)
 
 

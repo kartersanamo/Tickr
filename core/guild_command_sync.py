@@ -1,4 +1,5 @@
 """Guild-scoped slash command sync for Tickr public bot."""
+
 from __future__ import annotations
 
 import logging
@@ -22,7 +23,9 @@ class GuildCommandSync:
         return None
 
     @staticmethod
-    def format_command_names(commands_list: list[discord.app_commands.AppCommand]) -> str:
+    def format_command_names(
+        commands_list: list[discord.app_commands.AppCommand],
+    ) -> str:
         parts: list[str] = []
         for command in commands_list:
             subs = getattr(command, "options", None) or []
@@ -34,7 +37,9 @@ class GuildCommandSync:
         return ", ".join(parts)
 
     @classmethod
-    async def _sync_global(cls, bot: "commands.Bot", warn) -> list[discord.app_commands.AppCommand]:
+    async def _sync_global(
+        cls, bot: "commands.Bot", warn
+    ) -> list[discord.app_commands.AppCommand]:
         try:
             return await bot.tree.sync()
         except discord.HTTPException as exc:
@@ -47,7 +52,9 @@ class GuildCommandSync:
             raise
 
     @classmethod
-    async def sync_commands(cls, bot: "commands.Bot", *, log=None) -> list[discord.app_commands.AppCommand]:
+    async def sync_commands(
+        cls, bot: "commands.Bot", *, log=None
+    ) -> list[discord.app_commands.AppCommand]:
         info = log.info if log else cls._logger.info
         warn = log.warning if log else cls._logger.warning
 

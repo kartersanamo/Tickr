@@ -1,4 +1,5 @@
 """send_tickets.py — Post ticket panel messages."""
+
 from discord.ext import commands
 from discord import app_commands
 from typing import Literal
@@ -18,7 +19,9 @@ class TicketsSend(commands.Cog):
         self.client: commands.Bot = client
 
     @app_commands.guild_only()
-    @app_commands.command(name="send-tickets", description="Sends the ticket panel messages")
+    @app_commands.command(
+        name="send-tickets", description="Sends the ticket panel messages"
+    )
     @app_commands.describe(
         option="The message that you'd wish to send",
         channel="Channel to post the panel in (defaults to current channel)",
@@ -38,7 +41,10 @@ class TicketsSend(commands.Cog):
 
     @TaskDecorator.task("SendTickets Command", True)
     async def send_tickets_command(
-        self, interaction: discord.Interaction, option: str, channel: discord.TextChannel
+        self,
+        interaction: discord.Interaction,
+        option: str,
+        channel: discord.TextChannel,
     ) -> None:
         if interaction.guild_id is None:
             return
@@ -67,7 +73,9 @@ class TicketsSend(commands.Cog):
                 },
                 {
                     "embed": None,
-                    "view": TicketsView2.for_guild(tickets) if len(tickets) > 5 else None,
+                    "view": TicketsView2.for_guild(tickets)
+                    if len(tickets) > 5
+                    else None,
                     "image": None,
                 },
                 {
@@ -92,7 +100,9 @@ class TicketsSend(commands.Cog):
             else:
                 await channel.send(view=message["view"])
 
-        await interaction.edit_original_response(content="`✅` Successfully sent your message prompt!")
+        await interaction.edit_original_response(
+            content="`✅` Successfully sent your message prompt!"
+        )
 
 
 async def setup(client: commands.Bot) -> None:

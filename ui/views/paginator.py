@@ -38,9 +38,7 @@ class Paginator(discord.ui.View):
             embed.description = "No data found."
         elif self.count:
             for index, item in enumerate(self.get_current_page_data()):
-                embed.description += (
-                    f"**{(self.sep * self.current_page) - (self.sep - (index + 1))}.** {item}\n"
-                )
+                embed.description += f"**{(self.sep * self.current_page) - (self.sep - (index + 1))}.** {item}\n"
         else:
             for item in self.get_current_page_data():
                 embed.description += f"{item}\n"
@@ -66,13 +64,17 @@ class Paginator(discord.ui.View):
         self.first_page_button.style = (
             discord.ButtonStyle.gray if is_first_page else discord.ButtonStyle.red
         )
-        self.prev_button.style = discord.ButtonStyle.gray if is_first_page else discord.ButtonStyle.red
+        self.prev_button.style = (
+            discord.ButtonStyle.gray if is_first_page else discord.ButtonStyle.red
+        )
         self.next_button.disabled = is_last_page
         self.last_page_button.disabled = is_last_page
         self.last_page_button.style = (
             discord.ButtonStyle.gray if is_last_page else discord.ButtonStyle.red
         )
-        self.next_button.style = discord.ButtonStyle.gray if is_last_page else discord.ButtonStyle.red
+        self.next_button.style = (
+            discord.ButtonStyle.gray if is_last_page else discord.ButtonStyle.red
+        )
 
     def get_current_page_data(self):
         until_item = self.current_page * self.sep
@@ -82,9 +84,7 @@ class Paginator(discord.ui.View):
     def get_footer_text(self):
         total_pages = int(len(self.data) / self.sep)
         total_pages += 1 if int(len(self.data)) % self.sep != 0 else 0
-        footer_text: str = (
-            f"Page {self.current_page}/{total_pages} ({len(self.data)} total) | {self.footer_label}"
-        )
+        footer_text: str = f"Page {self.current_page}/{total_pages} ({len(self.data)} total) | {self.footer_label}"
         footer_text += self.sorted if self.sorted else ""
         return footer_text
 
@@ -93,25 +93,43 @@ class Paginator(discord.ui.View):
         self.current_page += step
         await self.update_message(interaction)
 
-    @discord.ui.button(label="|<", style=discord.ButtonStyle.gray, disabled=True, custom_id="lskip")
-    async def first_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(
+        label="|<", style=discord.ButtonStyle.gray, disabled=True, custom_id="lskip"
+    )
+    async def first_page_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await self.handle_page_button(interaction, 1 - self.current_page)
 
-    @discord.ui.button(label="<", style=discord.ButtonStyle.gray, disabled=True, custom_id="left")
-    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(
+        label="<", style=discord.ButtonStyle.gray, disabled=True, custom_id="left"
+    )
+    async def prev_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await self.handle_page_button(interaction, -1)
 
-    @discord.ui.button(label=">", style=discord.ButtonStyle.gray, disabled=True, custom_id="right")
-    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(
+        label=">", style=discord.ButtonStyle.gray, disabled=True, custom_id="right"
+    )
+    async def next_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await self.handle_page_button(interaction, 1)
 
-    @discord.ui.button(label=">|", style=discord.ButtonStyle.gray, disabled=True, custom_id="rskip")
-    async def last_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(
+        label=">|", style=discord.ButtonStyle.gray, disabled=True, custom_id="rskip"
+    )
+    async def last_page_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         total_pages = int(len(self.data) / self.sep)
         total_pages += 1 if int(len(self.data)) % self.sep != 0 else 0
         await self.handle_page_button(interaction, total_pages - self.current_page)
 
 
 def paginator_for_cfg(cfg) -> Paginator:
-    footer = cfg.get("FOOTER", "Tickr Tickets") if hasattr(cfg, "get") else "Tickr Tickets"
+    footer = (
+        cfg.get("FOOTER", "Tickr Tickets") if hasattr(cfg, "get") else "Tickr Tickets"
+    )
     return Paginator(color=embed_color(cfg), footer_label=footer)

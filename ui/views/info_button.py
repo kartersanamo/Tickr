@@ -24,6 +24,8 @@ class InfoButton(discord.ui.View):
             await interaction.response.send_modal(
                 Questions(self.ticket_type, self.ticket_info, guild_id)
             )
-            log_tasks.info(f"Sent Questions modal to {interaction.user} ({interaction.user.id})")
+            log_tasks.info(
+                f"Sent Questions modal to {interaction.user} ({interaction.user.id})"
+            )
         except Exception as exc:
             log_tasks.error(f"Failed to send Questions modal: {exc}")

@@ -213,7 +213,9 @@ class GuildConfigService:
     ) -> None:
         import asyncio
 
-        await asyncio.to_thread(cls._repo.upsert_dashboard, guild_id, notify_url, api_secret)
+        await asyncio.to_thread(
+            cls._repo.upsert_dashboard, guild_id, notify_url, api_secret
+        )
 
     @classmethod
     async def reload_tickets(cls, guild_id: int) -> dict:

@@ -1,4 +1,5 @@
 """Persist guild ticket types to database."""
+
 from __future__ import annotations
 
 from services.guild_config_service import GuildConfigService

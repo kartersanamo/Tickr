@@ -8,7 +8,14 @@ import discord
 
 
 class TicketLogUIState:
-    __slots__ = ("target", "mode", "sort_key", "type_filter", "page", "detail_channel_id")
+    __slots__ = (
+        "target",
+        "mode",
+        "sort_key",
+        "type_filter",
+        "page",
+        "detail_channel_id",
+    )
 
     def __init__(self, target: discord.Member) -> None:
         self.target = target

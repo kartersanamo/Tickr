@@ -1,4 +1,5 @@
 """In-Discord guild configuration editor for /manage-config."""
+
 from __future__ import annotations
 
 import json
@@ -8,14 +9,12 @@ import discord
 
 from services.guild_config_fields import (
     CONFIG_CATEGORIES,
-    CONFIG_FIELDS,
     FIELDS_BY_CATEGORY,
     FIELDS_BY_KEY,
     ConfigField,
     format_field_value,
     get_config_value,
     merge_defaults,
-    set_config_value,
     validate_required,
 )
 from services.guild_config_service import GuildConfigService
@@ -124,7 +123,10 @@ class ManageConfigView(discord.ui.View):
         self.guild_id = guild_id
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if not getattr(interaction.user, "guild_permissions", None) or not interaction.user.guild_permissions.administrator:
+        if (
+            not getattr(interaction.user, "guild_permissions", None)
+            or not interaction.user.guild_permissions.administrator
+        ):
             await interaction.response.send_message(
                 "Administrator permission required.",
                 ephemeral=True,
@@ -137,7 +139,9 @@ class ConfigCategorySelect(discord.ui.Select):
     def __init__(self, guild_id: int) -> None:
         self.guild_id = guild_id
         options = [
-            discord.SelectOption(label=label, value=key, description=f"Edit {label.lower()}")
+            discord.SelectOption(
+                label=label, value=key, description=f"Edit {label.lower()}"
+            )
             for key, label in CONFIG_CATEGORIES.items()
         ]
         super().__init__(
@@ -176,7 +180,9 @@ class ConfigFieldSelect(discord.ui.Select):
         self.category = category
         fields = FIELDS_BY_CATEGORY.get(category, [])
         options = [
-            discord.SelectOption(label=field.label, value=field.key, description=field.description[:100])
+            discord.SelectOption(
+                label=field.label, value=field.key, description=field.description[:100]
+            )
             for field in fields[:25]
         ]
         super().__init__(
@@ -208,8 +214,7 @@ class ConfigFieldSelect(discord.ui.Select):
         embed = discord.Embed(
             title=f"Edit — {field.label}",
             description=(
-                f"{field.description}\n\n"
-                "Use the controls below to update this value."
+                f"{field.description}\n\nUse the controls below to update this value."
             ),
             color=embed_color(merged),
         )
@@ -218,7 +223,9 @@ class ConfigFieldSelect(discord.ui.Select):
 
 class BackToCategoriesButton(discord.ui.Button):
     def __init__(self, guild_id: int) -> None:
-        super().__init__(label="Back to Categories", style=discord.ButtonStyle.secondary, row=4)
+        super().__init__(
+            label="Back to Categories", style=discord.ButtonStyle.secondary, row=4
+        )
         self.guild_id = guild_id
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -231,12 +238,16 @@ class BackToCategoriesButton(discord.ui.Button):
             dashboard=dashboard,
             tickets_global_enabled=enabled,
         )
-        await interaction.response.edit_message(embed=embed, view=ManageConfigHomeView(self.guild_id))
+        await interaction.response.edit_message(
+            embed=embed, view=ManageConfigHomeView(self.guild_id)
+        )
 
 
 class BackToCategoryButton(discord.ui.Button):
     def __init__(self, guild_id: int, category: str) -> None:
-        super().__init__(label="Back to Category", style=discord.ButtonStyle.secondary, row=4)
+        super().__init__(
+            label="Back to Category", style=discord.ButtonStyle.secondary, row=4
+        )
         self.guild_id = guild_id
         self.category = category
 
@@ -251,7 +262,9 @@ class BackToCategoryButton(discord.ui.Button):
             dashboard=dashboard,
             tickets_global_enabled=enabled,
         )
-        await interaction.response.edit_message(embed=embed, view=ManageConfigCategoryView(self.guild_id, self.category))
+        await interaction.response.edit_message(
+            embed=embed, view=ManageConfigCategoryView(self.guild_id, self.category)
+        )
 
 
 class ManageConfigCategoryView(ManageConfigView):
@@ -275,7 +288,9 @@ class ClearFieldButton(discord.ui.Button):
 
 
 class ToggleTicketsButton(discord.ui.Button):
-    def __init__(self, guild_id: int, category: str, field: ConfigField, enabled: bool) -> None:
+    def __init__(
+        self, guild_id: int, category: str, field: ConfigField, enabled: bool
+    ) -> None:
         label = "Disable Tickets" if enabled else "Enable Tickets"
         super().__init__(label=label, style=discord.ButtonStyle.primary, row=0)
         self.guild_id = guild_id
@@ -284,12 +299,18 @@ class ToggleTicketsButton(discord.ui.Button):
         self.enabled = enabled
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        await GuildConfigService.set_tickets_global_enabled(self.guild_id, not self.enabled)
-        await _refresh_field_view(interaction, self.guild_id, self.category, self.field, saved=True)
+        await GuildConfigService.set_tickets_global_enabled(
+            self.guild_id, not self.enabled
+        )
+        await _refresh_field_view(
+            interaction, self.guild_id, self.category, self.field, saved=True
+        )
 
 
 class OpenTextModalButton(discord.ui.Button):
-    def __init__(self, guild_id: int, category: str, field: ConfigField, current: Any) -> None:
+    def __init__(
+        self, guild_id: int, category: str, field: ConfigField, current: Any
+    ) -> None:
         super().__init__(label="Edit Value", style=discord.ButtonStyle.primary, row=0)
         self.guild_id = guild_id
         self.category = category
@@ -386,7 +407,11 @@ async def _refresh_field_view(
     description = f"{field.description}\n\n**Current:** {current_display}"
     if saved:
         description = f"`Saved.`\n\n{description}"
-    embed = discord.Embed(title=f"Edit — {field.label}", description=description, color=embed_color(merged))
+    embed = discord.Embed(
+        title=f"Edit — {field.label}",
+        description=description,
+        color=embed_color(merged),
+    )
     view = ManageConfigFieldView(
         guild_id,
         category,
@@ -401,7 +426,9 @@ async def _refresh_field_view(
 
 
 class ConfigTextModal(discord.ui.Modal):
-    def __init__(self, guild_id: int, category: str, field: ConfigField, current: Any) -> None:
+    def __init__(
+        self, guild_id: int, category: str, field: ConfigField, current: Any
+    ) -> None:
         super().__init__(title=field.label[:45])
         self.guild_id = guild_id
         self.category = category
@@ -415,13 +442,18 @@ class ConfigTextModal(discord.ui.Modal):
             label=field.label[:45],
             default=default[:4000] if default else None,
             required=field.required,
-            style=discord.TextStyle.paragraph if field.field_type in ("json", "url") else discord.TextStyle.short,
+            style=discord.TextStyle.paragraph
+            if field.field_type in ("json", "url")
+            else discord.TextStyle.short,
             max_length=4000 if field.field_type == "json" else 512,
         )
         self.add_item(self.value_input)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        if not getattr(interaction.user, "guild_permissions", None) or not interaction.user.guild_permissions.administrator:
+        if (
+            not getattr(interaction.user, "guild_permissions", None)
+            or not interaction.user.guild_permissions.administrator
+        ):
             await interaction.response.send_message(
                 "Administrator permission required.",
                 ephemeral=True,
@@ -433,7 +465,9 @@ class ConfigTextModal(discord.ui.Modal):
             try:
                 value = int(raw)
             except ValueError:
-                await interaction.response.send_message("Enter a whole number.", ephemeral=True)
+                await interaction.response.send_message(
+                    "Enter a whole number.", ephemeral=True
+                )
                 return
         elif self.field.field_type == "json":
             try:
@@ -445,7 +479,9 @@ class ConfigTextModal(discord.ui.Modal):
         await _save_field(interaction, self.guild_id, self.category, self.field, value)
 
 
-def _role_select(field: ConfigField, guild_id: int, category: str) -> discord.ui.RoleSelect:
+def _role_select(
+    field: ConfigField, guild_id: int, category: str
+) -> discord.ui.RoleSelect:
     class _Select(discord.ui.RoleSelect):
         def __init__(self) -> None:
             super().__init__(
@@ -464,12 +500,16 @@ def _role_select(field: ConfigField, guild_id: int, category: str) -> discord.ui
                 value = self.values[0].id
             else:
                 value = None
-            await _save_field(interaction, self.guild_id, self.category, self.field, value)
+            await _save_field(
+                interaction, self.guild_id, self.category, self.field, value
+            )
 
     return _Select()
 
 
-def _channel_select(field: ConfigField, guild_id: int, category: str) -> discord.ui.ChannelSelect:
+def _channel_select(
+    field: ConfigField, guild_id: int, category: str
+) -> discord.ui.ChannelSelect:
     if field.field_type == "channel_category" or field.field_type == "category_list":
         channel_types = [discord.ChannelType.category]
         max_values = 25 if field.field_type == "category_list" else 1
@@ -499,7 +539,9 @@ def _channel_select(field: ConfigField, guild_id: int, category: str) -> discord
                 value = self.values[0].id
             else:
                 value = None
-            await _save_field(interaction, self.guild_id, self.category, self.field, value)
+            await _save_field(
+                interaction, self.guild_id, self.category, self.field, value
+            )
 
     return _Select()
 

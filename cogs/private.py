@@ -1,4 +1,5 @@
 """private.py — Private / management ticket categories."""
+
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -17,11 +18,15 @@ class Private(commands.Cog):
         self.client: commands.Bot = client
 
     @TaskDecorator.task("Change Category", False)
-    async def change_category(self, channel: discord.TextChannel, category: discord.CategoryChannel) -> None:
+    async def change_category(
+        self, channel: discord.TextChannel, category: discord.CategoryChannel
+    ) -> None:
         await channel.edit(category=category)
 
     @TaskDecorator.task("Update Database", False)
-    async def update_database(self, guild_id: int, channel_id: int, privated_str: str) -> None:
+    async def update_database(
+        self, guild_id: int, channel_id: int, privated_str: str
+    ) -> None:
         DatabasePool.execute(
             "UPDATE tickets SET privated = %s WHERE guild_id = %s AND channel_id = %s",
             (privated_str, guild_id, channel_id),
@@ -29,7 +34,12 @@ class Private(commands.Cog):
 
     @TaskDecorator.task("Update Permissions", False)
     async def update_permissions(
-        self, channel: discord.TextChannel, guild: discord.Guild, permissions, default_role: discord.Role, cfg
+        self,
+        channel: discord.TextChannel,
+        guild: discord.Guild,
+        permissions,
+        default_role: discord.Role,
+        cfg,
     ) -> None:
         await channel.edit(sync_permissions=True)
         for key, value in permissions:
@@ -42,7 +52,9 @@ class Private(commands.Cog):
                 await channel.set_permissions(staff_team, view_channel=False)
 
     @TaskDecorator.task("Send Embed", False)
-    async def send_embed(self, interaction: discord.Interaction, description: str, cfg) -> None:
+    async def send_embed(
+        self, interaction: discord.Interaction, description: str, cfg
+    ) -> None:
         embed = discord.Embed(
             color=embed_color(cfg),
             description=f"{interaction.user.mention} {description}",
@@ -61,7 +73,9 @@ class Private(commands.Cog):
         privated: str,
         description: str,
     ) -> None:
-        if interaction.guild_id is None or not isinstance(interaction.channel, discord.TextChannel):
+        if interaction.guild_id is None or not isinstance(
+            interaction.channel, discord.TextChannel
+        ):
             return
         cfg = await GuildConfigService.for_guild(interaction.guild_id)
         category_id = cfg.get(f"CHANNEL_IDS.{category_key}")
@@ -73,19 +87,28 @@ class Private(commands.Cog):
             return
         category = interaction.guild.get_channel(int(category_id))
         if not isinstance(category, discord.CategoryChannel):
-            await interaction.followup.send("`❌` Private category not found.", ephemeral=True)
+            await interaction.followup.send(
+                "`❌` Private category not found.", ephemeral=True
+            )
             return
 
         await self.change_category(interaction.channel, category)
-        await self.update_database(interaction.guild_id, interaction.channel.id, privated)
+        await self.update_database(
+            interaction.guild_id, interaction.channel.id, privated
+        )
 
         def check(before, after):
             return after.id == interaction.channel.id and after.category == category
 
         try:
-            await interaction.client.wait_for("guild_channel_update", check=check, timeout=5)
+            await interaction.client.wait_for(
+                "guild_channel_update", check=check, timeout=5
+            )
         except asyncio.TimeoutError:
-            if interaction.channel.category and interaction.channel.category.id != category.id:
+            if (
+                interaction.channel.category
+                and interaction.channel.category.id != category.id
+            ):
                 log_tasks.warning("Timeout waiting for category update.")
                 await interaction.followup.send(
                     "`❌` Timeout Error! The bot could not change the channel's category.",
@@ -111,7 +134,10 @@ class Private(commands.Cog):
     async def private(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         await self._move_private(
-            interaction, "ADMIN_PRIVATE_CATEGORY_ID", "Admin", "has turned this channel private."
+            interaction,
+            "ADMIN_PRIVATE_CATEGORY_ID",
+            "Admin",
+            "has turned this channel private.",
         )
 
     @is_ticket()

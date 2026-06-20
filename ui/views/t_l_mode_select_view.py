@@ -17,13 +17,17 @@ class TLModeSelect(discord.ui.Select):
             max_values=1,
             options=[
                 discord.SelectOption(
-                    label=TicketLogService.truncate(f"Opened by {state.target.display_name}", 100),
+                    label=TicketLogService.truncate(
+                        f"Opened by {state.target.display_name}", 100
+                    ),
                     value="owner",
                     description="They were the ticket owner",
                     default=state.mode == "owner",
                 ),
                 discord.SelectOption(
-                    label=TicketLogService.truncate(f"Closed by {state.target.display_name}", 100),
+                    label=TicketLogService.truncate(
+                        f"Closed by {state.target.display_name}", 100
+                    ),
                     value="closer",
                     description="They clicked close / closed the ticket",
                     default=state.mode == "closer",

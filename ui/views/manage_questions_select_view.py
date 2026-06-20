@@ -8,15 +8,23 @@ class ManageQuestionsSelect(discord.ui.Select):
         self.ticket_info = ticket_info
         self.ticket_category = ticket_category
         self.ticket = ticket
-        questions = ticket_info.get(ticket_category, {}).get(ticket, {}).get("Questions", [])
-        labels = [question.get("Label", "None") for question in questions if isinstance(question, dict)]
+        questions = (
+            ticket_info.get(ticket_category, {}).get(ticket, {}).get("Questions", [])
+        )
+        labels = [
+            question.get("Label", "None")
+            for question in questions
+            if isinstance(question, dict)
+        ]
         if labels:
             options = [discord.SelectOption(label=label) for label in labels[:25]]
             placeholder = "Select a question to manage..."
         else:
             options = [discord.SelectOption(label="No questions yet", value="__none__")]
             placeholder = "No questions configured"
-        super().__init__(placeholder=placeholder, options=options, custom_id="manage_questions_pick")
+        super().__init__(
+            placeholder=placeholder, options=options, custom_id="manage_questions_pick"
+        )
 
     async def callback(self, interaction: discord.Interaction) -> None:
         if self.values[0] == "__none__":
@@ -30,7 +38,9 @@ class ManageQuestionsSelect(discord.ui.Select):
 
             question = self.values[0]
             await interaction.response.defer()
-            view = ManageQuestionView(self.ticket_info, self.ticket_category, self.ticket, question)
+            view = ManageQuestionView(
+                self.ticket_info, self.ticket_category, self.ticket, question
+            )
             await view.update_embed(interaction)
             if interaction.message is not None:
                 await interaction.message.edit(view=view)

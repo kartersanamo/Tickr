@@ -63,7 +63,9 @@ class TicketChannelOrdering:
             if ticket_channel.id == channel.id:
                 continue
 
-            resolved_name = cls.effective_channel_name(ticket_channel, channel, channel_name)
+            resolved_name = cls.effective_channel_name(
+                ticket_channel, channel, channel_name
+            )
             ticket_number = ticket_numbers.get(ticket_channel.id)
             if cls.is_unrenamed_ticket(resolved_name, ticket_number):
                 if target_is_unrenamed and resolved_name.lower() < target_name.lower():
@@ -71,7 +73,10 @@ class TicketChannelOrdering:
                 continue
 
             renamed_count += 1
-            if not target_is_unrenamed and cls.ticket_sort_key(resolved_name) < target_sort_key:
+            if (
+                not target_is_unrenamed
+                and cls.ticket_sort_key(resolved_name) < target_sort_key
+            ):
                 renamed_before += 1
 
         if target_is_unrenamed:
@@ -112,7 +117,13 @@ class TicketChannelOrdering:
         Renamed tickets are sorted at the top (longest name first, then alphabetical).
         Un-renamed tickets stay at the bottom of the category.
         """
-        channels = sorted(category.text_channels, key=lambda ticket_channel: ticket_channel.position)
-        ticket_numbers = cls.fetch_ticket_numbers([ticket_channel.id for ticket_channel in channels])
-        category_index = cls.count_position(channels, channel, ticket_numbers, channel_name=channel_name)
+        channels = sorted(
+            category.text_channels, key=lambda ticket_channel: ticket_channel.position
+        )
+        ticket_numbers = cls.fetch_ticket_numbers(
+            [ticket_channel.id for ticket_channel in channels]
+        )
+        category_index = cls.count_position(
+            channels, channel, ticket_numbers, channel_name=channel_name
+        )
         return cls.category_index_to_guild_position(category, channel, category_index)

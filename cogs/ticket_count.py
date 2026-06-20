@@ -1,4 +1,5 @@
 """ticket_count.py — Display open ticket counts."""
+
 from discord.ext import commands
 from discord import app_commands
 from typing import Literal
@@ -27,7 +28,12 @@ class TicketCount(commands.Cog):
         )
 
     async def get_debug_embeds(
-        self, cfg, active_list: list[dict], active_count: int, total_list: list[dict], total_count: int
+        self,
+        cfg,
+        active_list: list[dict],
+        active_count: int,
+        total_list: list[dict],
+        total_count: int,
     ) -> list[discord.Embed]:
         color = embed_color(cfg)
         active_embed = discord.Embed(
@@ -53,12 +59,18 @@ class TicketCount(commands.Cog):
         return [active_embed, history_embed]
 
     @app_commands.guild_only()
-    @app_commands.command(name="ticket-count", description="Sends the number of currently opened tickets")
-    async def ticketcount(self, interaction: discord.Interaction, debug: Literal["Yes"] = None):
+    @app_commands.command(
+        name="ticket-count", description="Sends the number of currently opened tickets"
+    )
+    async def ticketcount(
+        self, interaction: discord.Interaction, debug: Literal["Yes"] = None
+    ):
         await self.ticket_count_command(interaction, debug)
 
     @TaskDecorator.task("Ticket Count Command", True)
-    async def ticket_count_command(self, interaction: discord.Interaction, debug: str) -> None:
+    async def ticket_count_command(
+        self, interaction: discord.Interaction, debug: str
+    ) -> None:
         if interaction.guild_id is None:
             return
         cfg = await GuildConfigService.for_guild(interaction.guild_id)
@@ -75,7 +87,9 @@ class TicketCount(commands.Cog):
             embed.set_footer(text=f"There have been {total_count:,} total tickets!")
             await interaction.response.send_message(embeds=[embed])
         else:
-            embeds = await self.get_debug_embeds(cfg, active_list, active_count, total_list, total_count)
+            embeds = await self.get_debug_embeds(
+                cfg, active_list, active_count, total_list, total_count
+            )
             await interaction.response.send_message(embeds=embeds)
 
 

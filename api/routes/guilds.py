@@ -1,4 +1,5 @@
 """Guild list and summary routes."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +21,9 @@ router = APIRouter(tags=["guilds"])
 
 
 @router.get("/me/guilds")
-async def list_manageable_guilds(user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def list_manageable_guilds(
+    user: SessionUser = Depends(get_current_user),
+) -> dict[str, Any]:
     installed = bot_guild_ids()
     results: list[dict[str, Any]] = []
     for guild_id in sorted(installed):
@@ -56,7 +59,9 @@ async def list_manageable_guilds(user: SessionUser = Depends(get_current_user)) 
 
 
 @router.get("/guilds/{guild_id}")
-async def guild_summary(guild_id: int, user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def guild_summary(
+    guild_id: int, user: SessionUser = Depends(get_current_user)
+) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)

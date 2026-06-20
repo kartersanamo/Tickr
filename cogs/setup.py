@@ -1,4 +1,5 @@
 """Setup wizard for new guilds."""
+
 from __future__ import annotations
 
 import discord

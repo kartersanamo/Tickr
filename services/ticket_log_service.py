@@ -27,7 +27,12 @@ class TicketLogService:
             return None
 
     @classmethod
-    def staff_privacy(cls, interaction: discord.Interaction, row: Dict[str, Any], cfg: dict | None = None) -> Tuple[bool, bool]:
+    def staff_privacy(
+        cls,
+        interaction: discord.Interaction,
+        row: Dict[str, Any],
+        cfg: dict | None = None,
+    ) -> Tuple[bool, bool]:
         cfg = cfg or {}
         guild = interaction.guild
         if guild is None:
@@ -153,7 +158,11 @@ class TicketLogService:
             else:
                 link = "*No transcript URL*"
             lines.append(f"**{idx}.** `#{num}` · **{typ}** `{name}` {link}")
-        body = "\n".join(lines) if lines else "*No closed tickets match this view on this page.*"
+        body = (
+            "\n".join(lines)
+            if lines
+            else "*No closed tickets match this view on this page.*"
+        )
         return cls.chunk_text(body, 3400)
 
     @staticmethod
@@ -189,7 +198,9 @@ class TicketLogService:
     @classmethod
     def format_select_option_date(cls, ts: int) -> str:
         try:
-            dt = datetime.fromtimestamp(int(ts), tz=pytz.UTC).astimezone(pytz.timezone("US/Eastern"))
+            dt = datetime.fromtimestamp(int(ts), tz=pytz.UTC).astimezone(
+                pytz.timezone("US/Eastern")
+            )
         except (TypeError, ValueError, OSError):
             return "Unknown date"
         return f"{dt.strftime('%A')} {dt.strftime('%B')} {cls.ordinal_day(dt.day)}, {dt.year}"
@@ -201,7 +212,9 @@ class TicketLogService:
         return [text[i : i + max_chunk] for i in range(0, len(text), max_chunk)]
 
     @classmethod
-    def format_detail_text(cls, interaction: discord.Interaction, row: Dict[str, Any]) -> List[str]:
+    def format_detail_text(
+        cls, interaction: discord.Interaction, row: Dict[str, Any]
+    ) -> List[str]:
         show_t, show_r = cls.staff_privacy(interaction, row)
         opened = cls.safe_int_ts(row.get("opened_at"))
         closed = cls.safe_int_ts(row.get("closed_at"))
@@ -209,7 +222,9 @@ class TicketLogService:
         closed_s = f"<t:{closed}:F> (<t:{closed}:R>)" if closed else "`N/A`"
         duration = "`N/A`"
         if opened and closed and closed >= opened:
-            duration = f"`{closed - opened}s` (~{max(1, int((closed - opened) / 60))} min)"
+            duration = (
+                f"`{closed - opened}s` (~{max(1, int((closed - opened) / 60))} min)"
+            )
 
         transcript = (row.get("transcript") or "").strip()
         if show_t and transcript:

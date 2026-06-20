@@ -1,4 +1,5 @@
 """Bot-level configuration from environment (not per-guild)."""
+
 from __future__ import annotations
 
 import os
@@ -17,9 +18,12 @@ class BotConfig:
             "TOKEN": os.getenv("DISCORD_TOKEN"),
             "PRESENCE": os.getenv("BOT_PRESENCE", "Tickr Tickets"),
             "TRANSCRIPT_PASTE_URL": os.getenv("TRANSCRIPT_PASTE_URL", ""),
-            "TRANSCRIPT_PASTE_SUFFIX": os.getenv("TRANSCRIPT_PASTE_SUFFIX", "/documents"),
+            "TRANSCRIPT_PASTE_SUFFIX": os.getenv(
+                "TRANSCRIPT_PASTE_SUFFIX", "/documents"
+            ),
             "DASHBOARD_URL": os.getenv("DASHBOARD_URL", "").rstrip("/"),
-            "TICKETS_BOT_API_SECRET": os.getenv("TICKETS_BOT_API_SECRET") or os.getenv("CONTROL_API_SECRET"),
+            "TICKETS_BOT_API_SECRET": os.getenv("TICKETS_BOT_API_SECRET")
+            or os.getenv("CONTROL_API_SECRET"),
             "TICKETS_BOT_API_PORT": int(os.getenv("TICKETS_BOT_API_PORT", "8788")),
             "DEV_GUILD_ID": int(os.getenv("DISCORD_GUILD_ID", "0") or "0") or None,
             "DATABASE_CONFIG": self._db_config_from_env(),
@@ -61,7 +65,8 @@ class BotConfig:
             "user": os.getenv("DB_USER", ""),
             "password": os.getenv("DB_PASSWORD", ""),
             "database": os.getenv("DB_NAME", "") or os.getenv("DB_DATABASE", ""),
-            "autocommit": os.getenv("DB_AUTOCOMMIT", "true").lower() in ("1", "true", "yes"),
+            "autocommit": os.getenv("DB_AUTOCOMMIT", "true").lower()
+            in ("1", "true", "yes"),
         }
 
 

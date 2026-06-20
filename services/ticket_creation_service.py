@@ -50,9 +50,8 @@ class TicketCreationService:
             or os.getenv("DASHBOARD_TICKET_NOTIFY_URL", "").strip()
             or (f"{base_url}/api/tickets/live-events" if base_url else "")
         )
-        secret = (
-            (dashboard or {}).get("api_secret")
-            or BotConfig.get("TICKETS_BOT_API_SECRET")
+        secret = (dashboard or {}).get("api_secret") or BotConfig.get(
+            "TICKETS_BOT_API_SECRET"
         )
         if not endpoint or not secret:
             return
@@ -70,7 +69,9 @@ class TicketCreationService:
         timeout = aiohttp.ClientTimeout(total=2.5)
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(endpoint, json=payload, headers=headers) as resp:
+                async with session.post(
+                    endpoint, json=payload, headers=headers
+                ) as resp:
                     if resp.status >= 400:
                         body = await resp.text()
                         log_tasks.warning(
@@ -88,7 +89,9 @@ class TicketCreationService:
         return int(row[0]["cnt"])
 
     @TaskDecorator.task("Check Verified", False)
-    async def check_verified(self, interaction: discord.Interaction, cfg: GuildConfig) -> str | None:
+    async def check_verified(
+        self, interaction: discord.Interaction, cfg: GuildConfig
+    ) -> str | None:
         guild = interaction.guild
         if guild is None:
             return "`❌` You must be in a server to do this!"
@@ -115,7 +118,9 @@ class TicketCreationService:
         return None
 
     @TaskDecorator.task("Check 5 Tickets", False)
-    async def check_5_tickets(self, interaction: discord.Interaction, guild_id: int) -> str | None:
+    async def check_5_tickets(
+        self, interaction: discord.Interaction, guild_id: int
+    ) -> str | None:
         row = DatabasePool.execute(
             "SELECT COUNT(*) AS open_ticket_count FROM tickets WHERE guild_id = %s AND owner_id = %s AND is_active = 1",
             (guild_id, interaction.user.id),
@@ -129,7 +134,9 @@ class TicketCreationService:
         return None
 
     @TaskDecorator.task("Check Blacklisted", False)
-    async def check_blacklisted(self, interaction: discord.Interaction, guild_id: int) -> str | None:
+    async def check_blacklisted(
+        self, interaction: discord.Interaction, guild_id: int
+    ) -> str | None:
         row = DatabasePool.execute(
             "SELECT reason FROM blacklists WHERE guild_id = %s AND user_id = %s",
             (guild_id, interaction.user.id),
@@ -143,7 +150,9 @@ class TicketCreationService:
         return None
 
     @TaskDecorator.task("Check Disabled", False)
-    async def check_disabled(self, interaction: discord.Interaction, cfg: GuildConfig) -> str | None:
+    async def check_disabled(
+        self, interaction: discord.Interaction, cfg: GuildConfig
+    ) -> str | None:
         if not cfg.tickets_globally_enabled():
             log_tasks.warning(
                 f"{interaction.user} ({interaction.user.id}) tried to open a ticket when tickets are disabled"
@@ -224,7 +233,9 @@ class TicketCreationService:
         return None
 
     @TaskDecorator.task("Check", False)
-    async def check(self, interaction: discord.Interaction, cfg: GuildConfig) -> str | None:
+    async def check(
+        self, interaction: discord.Interaction, cfg: GuildConfig
+    ) -> str | None:
         guild_id = interaction.guild_id
         if guild_id is None:
             return "`❌` You must be in a server to do this!"
@@ -325,7 +336,10 @@ class TicketCreationService:
             "You have created a new ticket!\n"
             f"**Type:** {ticket_type}\n\n"
         )
-        description += ticket_info.get("Message", "") + "\n \n**One of our staff members will be with you shortly.**"
+        description += (
+            ticket_info.get("Message", "")
+            + "\n \n**One of our staff members will be with you shortly.**"
+        )
         embed = discord.Embed(
             color=embed_color(cfg),
             description=description,
@@ -335,8 +349,15 @@ class TicketCreationService:
         embed.set_footer(text=cfg.get("FOOTER", "Tickr Tickets"), icon_url=logo_url)
         from ui.views.info_button import InfoButton
 
-        send_kwargs: dict = {"embed": embed, "view": InfoButton(ticket_type, ticket_info, interaction.guild_id)}
-        if logo and isinstance(logo, str) and not logo.startswith(("http://", "https://")):
+        send_kwargs: dict = {
+            "embed": embed,
+            "view": InfoButton(ticket_type, ticket_info, interaction.guild_id),
+        }
+        if (
+            logo
+            and isinstance(logo, str)
+            and not logo.startswith(("http://", "https://"))
+        ):
             import os.path
 
             if os.path.isfile(logo):
@@ -366,14 +387,18 @@ class TicketCreationService:
         )
         from services.active_ticket_cache import active_ticket_cache
 
-        active_ticket_cache.register(interaction.guild_id, channel.id, interaction.user.id)
+        active_ticket_cache.register(
+            interaction.guild_id, channel.id, interaction.user.id
+        )
         await self.notify_dashboard_new_ticket(
             channel, number, ticket_type, interaction.user.id, interaction.guild_id
         )
         return channel
 
     @TaskDecorator.task(action_name="New Ticket")
-    async def new_ticket(self, interaction: discord.Interaction, view: discord.ui.View) -> None:
+    async def new_ticket(
+        self, interaction: discord.Interaction, view: discord.ui.View
+    ) -> None:
         if interaction.guild_id is None:
             return
         cfg = await GuildConfigService.for_guild(interaction.guild_id)

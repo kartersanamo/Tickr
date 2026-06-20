@@ -1,22 +1,22 @@
-import os
 import json
+import os
+
 import discord
-from discord.ext import commands
 from discord import app_commands
+from discord.ext import commands
 
 from assets.dashboard_http import DashboardHttp
 from core.analytics.register import CommandTrackingRegistrar
+from core.app import BotApp
+from core.bot_config import BotConfig
+from core.database import DatabasePool
+from core.decorators import TaskDecorator
+from core.errors.setup import ErrorSetup
 from core.guild_command_sync import GuildCommandSync
 from core.loggers import log_commands, log_tasks
-from core.errors.setup import ErrorSetup
-from core.bot_config import BotConfig
-from core.decorators import TaskDecorator
-from core.database import DatabasePool
-from core.app import BotApp
-from ui.views.tickets_view2_view import TicketsView2
 from ui.views.ticket_logs_view import TicketLogs
 from ui.views.tickets_view import TicketsView
-
+from ui.views.tickets_view2_view import TicketsView2
 
 COG_FILES: list[str] = [
     f.split(".")[0].title()
@@ -40,7 +40,10 @@ class Client(commands.Bot):
     @TaskDecorator.task(action_name="Setup Cogs")
     async def _setup_cogs(self) -> None:
         loaded: list[str] = []
-        for ext in ("services.active_ticket_cache", *(f"cogs.{n.lower()}" for n in COG_FILES)):
+        for ext in (
+            "services.active_ticket_cache",
+            *(f"cogs.{n.lower()}" for n in COG_FILES),
+        ):
             try:
                 await self.load_extension(ext)
                 loaded.append(ext)
@@ -106,17 +109,25 @@ class Client(commands.Bot):
         @app_commands.describe(cog="The cog to reload")
         @app_commands.autocomplete(cog=bot.cog_autocomplete)
         @bot.tree.command(name="tickr-reload", description="Reloads a Tickr cog")
-        async def tickr_reload_slash(interaction: discord.Interaction, cog: str) -> None:
+        async def tickr_reload_slash(
+            interaction: discord.Interaction, cog: str
+        ) -> None:
             await bot.tickr_reload_command(interaction, cog)
 
     @TaskDecorator.task(action_name="Tickr Reload Command", log=True)
-    async def tickr_reload_command(self, interaction: discord.Interaction, cog: str) -> None:
+    async def tickr_reload_command(
+        self, interaction: discord.Interaction, cog: str
+    ) -> None:
         if cog not in COG_FILES:
-            await interaction.response.send_message(f"Invalid cog **{cog}.py**", ephemeral=True)
+            await interaction.response.send_message(
+                f"Invalid cog **{cog}.py**", ephemeral=True
+            )
             return
         try:
             await self.reload_extension(f"cogs.{cog.lower()}")
-            await interaction.response.send_message(f"Reloaded **{cog}.py**", ephemeral=True)
+            await interaction.response.send_message(
+                f"Reloaded **{cog}.py**", ephemeral=True
+            )
 
         except (
             commands.ExtensionNotFound,
@@ -140,7 +151,9 @@ class Client(commands.Bot):
 
     @TaskDecorator.task(action_name="Setup Hook")
     async def setup_hook(self) -> None:
-        await ErrorSetup.wire_bot_async_setup(bot=self, bot_name="Tickr", log_tasks=log_tasks)
+        await ErrorSetup.wire_bot_async_setup(
+            bot=self, bot_name="Tickr", log_tasks=log_tasks
+        )
         self.app = BotApp.from_bot(self)
         self._register_reload_command()
         await self._setup_cogs()

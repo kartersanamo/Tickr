@@ -1,6 +1,7 @@
 """
 close.py — Close ticket, transcript, logs (multi-guild).
 """
+
 from discord.ext import commands
 
 from core.analytics import logger as analytics
@@ -17,7 +18,12 @@ from core.database import DatabasePool
 from core.decorators import TaskDecorator
 from core.loggers import log_commands, log_tasks
 from services.guild_config_service import GuildConfigService
-from services.guild_helpers import embed_color, format_transcript_line, optional_logo_file, set_embed_footer
+from services.guild_helpers import (
+    embed_color,
+    format_transcript_line,
+    optional_logo_file,
+    set_embed_footer,
+)
 from services.statistics_service import is_found
 from services.ticket_check_service import is_ticket
 
@@ -44,14 +50,20 @@ class Close(commands.Cog):
             return ""
         url = f"{base_url.rstrip('/')}{suffix}"
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        response = requests.post(url, headers=headers, data=content.encode("utf-8"), timeout=30)
+        response = requests.post(
+            url, headers=headers, data=content.encode("utf-8"), timeout=30
+        )
         response_data = response.json()
         key = response_data["key"]
         return f"{base_url.rstrip('/')}/{key}"
 
     @TaskDecorator.task("Fetch All Messages")
-    async def fetch_all_messages(self, channel: discord.TextChannel) -> list[discord.Message]:
-        return [message async for message in channel.history(limit=None, oldest_first=True)]
+    async def fetch_all_messages(
+        self, channel: discord.TextChannel
+    ) -> list[discord.Message]:
+        return [
+            message async for message in channel.history(limit=None, oldest_first=True)
+        ]
 
     @TaskDecorator.task("Format Embed")
     async def format_embed_content(self, embed: discord.Embed) -> str:
@@ -97,7 +109,9 @@ class Close(commands.Cog):
         for field in fields:
             field_name = field.get("name", "")
             field_value = field.get("value", "")
-            message_content += f"| {field_name:{max_length}} |\n{field_value:{max_length}} |\n"
+            message_content += (
+                f"| {field_name:{max_length}} |\n{field_value:{max_length}} |\n"
+            )
         if footer:
             message_content += f"| {footer:{max_length}} |\n"
         message_content += "\\" + "-" * (int(max_length) + 2) + "/"
@@ -133,7 +147,9 @@ class Close(commands.Cog):
                 for embed in message.embeds:
                     message_content += "\n" + await self.format_embed_content(embed)
                 created_at = self.convert_to_est(str(message.created_at.timestamp()))
-                content += f"[{created_at}]\n{message.author.name} : {message.author.id}"
+                content += (
+                    f"[{created_at}]\n{message.author.name} : {message.author.id}"
+                )
                 if message_content:
                     content += f"\n\t{message_content}"
                 content += "\n\n"
@@ -239,7 +255,15 @@ class Close(commands.Cog):
 
         DatabasePool.execute(
             "UPDATE tickets SET is_active = 0, closed_by_id = %s, closed_at = %s, reason = %s, name = %s, transcript = %s WHERE guild_id = %s AND channel_id = %s",
-            (closed_by_id, closed_at_timestamp, reason, name, link, guild_id, channel_id),
+            (
+                closed_by_id,
+                closed_at_timestamp,
+                reason,
+                name,
+                link,
+                guild_id,
+                channel_id,
+            ),
         )
         DatabasePool.execute(
             "UPDATE staff_statistics SET tickets_closed = %s WHERE guild_id = %s AND user_id = %s",
@@ -249,7 +273,9 @@ class Close(commands.Cog):
 
         active_ticket_cache.unregister(guild_id, channel_id)
         if analytics:
-            analytics.increment_total_stat(guild_id, str(closed_by_id), "tickets_closed", 1)
+            analytics.increment_total_stat(
+                guild_id, str(closed_by_id), "tickets_closed", 1
+            )
 
     @TaskDecorator.task("Fetch Ticket Info")
     async def fetch_ticket_info(self, guild_id: int, channel_id: int) -> tuple:
@@ -313,9 +339,13 @@ class Close(commands.Cog):
         await self.close_command(interaction, reason)
 
     @TaskDecorator.task("Close Command", False)
-    async def close_command(self, interaction: discord.Interaction, reason: str) -> None:
+    async def close_command(
+        self, interaction: discord.Interaction, reason: str
+    ) -> None:
         await interaction.response.defer()
-        if interaction.guild is None or not isinstance(interaction.channel, discord.TextChannel):
+        if interaction.guild is None or not isinstance(
+            interaction.channel, discord.TextChannel
+        ):
             return
         await self.close_ticket_channel(
             interaction.guild,

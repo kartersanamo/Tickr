@@ -1,4 +1,5 @@
 """CRUD helpers for guild ticket_types JSON."""
+
 from __future__ import annotations
 
 import copy
@@ -8,7 +9,11 @@ RESERVED_KEYS = frozenset({"TOGGLE_STATUS"})
 
 
 def category_names(data: dict) -> list[str]:
-    return [key for key in data.keys() if key not in RESERVED_KEYS and isinstance(data.get(key), dict)]
+    return [
+        key
+        for key in data.keys()
+        if key not in RESERVED_KEYS and isinstance(data.get(key), dict)
+    ]
 
 
 def ticket_type_names(data: dict, category: str) -> list[str]:
@@ -141,7 +146,9 @@ def rename_ticket_type(data: dict, category: str, old_name: str, new_name: str) 
     return updated
 
 
-def duplicate_ticket_type(data: dict, category: str, type_name: str, new_name: str) -> dict:
+def duplicate_ticket_type(
+    data: dict, category: str, type_name: str, new_name: str
+) -> dict:
     if category not in data or type_name not in data.get(category, {}):
         raise ValueError("Ticket type not found.")
     clone = copy.deepcopy(data[category][type_name])
@@ -164,7 +171,9 @@ def add_question(data: dict, category: str, type_name: str, question: dict) -> d
     return updated
 
 
-def remove_question(data: dict, category: str, type_name: str, question_label: str) -> dict:
+def remove_question(
+    data: dict, category: str, type_name: str, question_label: str
+) -> dict:
     if category not in data or type_name not in data.get(category, {}):
         raise ValueError("Ticket type not found.")
     updated = copy.deepcopy(data)
@@ -176,7 +185,9 @@ def remove_question(data: dict, category: str, type_name: str, question_label: s
     return updated
 
 
-def set_private_mode(data: dict, category: str, type_name: str, mode: str | None) -> dict:
+def set_private_mode(
+    data: dict, category: str, type_name: str, mode: str | None
+) -> dict:
     if category not in data or type_name not in data.get(category, {}):
         raise ValueError("Ticket type not found.")
     updated = copy.deepcopy(data)

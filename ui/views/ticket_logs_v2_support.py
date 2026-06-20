@@ -12,7 +12,9 @@ from ui.views.ticket_log_u_i_state_view import TicketLogUIState
 
 class TicketLogsV2Support:
     @staticmethod
-    async def tl_edit(interaction: discord.Interaction, state: TicketLogUIState) -> None:
+    async def tl_edit(
+        interaction: discord.Interaction, state: TicketLogUIState
+    ) -> None:
         from ui.views.ticket_logs_v2_layout_view import TicketLogsV2Layout
 
         if interaction.guild_id is None:

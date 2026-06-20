@@ -1,4 +1,5 @@
 """Database error helpers."""
+
 from __future__ import annotations
 
 import logging
@@ -28,7 +29,9 @@ class DatabaseErrors:
             raise ExternalServiceError(log_message=str(exc)) from exc
 
     @staticmethod
-    def log_db_failure(logger: logging.Logger, exc: BaseException, *, query_hint: str = "") -> None:
+    def log_db_failure(
+        logger: logging.Logger, exc: BaseException, *, query_hint: str = ""
+    ) -> None:
         from core.errors.logging import ExceptionLogging
 
         ExceptionLogging.log_exception(
@@ -39,6 +42,8 @@ class DatabaseErrors:
         )
 
     @staticmethod
-    def log_query_failure(logger: logging.Logger, exc: BaseException, query: str) -> None:
+    def log_query_failure(
+        logger: logging.Logger, exc: BaseException, query: str
+    ) -> None:
         """Log failed SQL from per-bot core/database.py helpers."""
         DatabaseErrors.log_db_failure(logger, exc, query_hint=query)

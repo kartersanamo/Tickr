@@ -1,4 +1,5 @@
 """Discord guild metadata for config pickers."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,7 +14,9 @@ router = APIRouter(tags=["discord"])
 
 
 @router.get("/guilds/{guild_id}/discord/meta")
-async def discord_meta(guild_id: int, user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def discord_meta(
+    guild_id: int, user: SessionUser = Depends(get_current_user)
+) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     if not DISCORD_BOT_TOKEN:
@@ -33,7 +36,12 @@ async def discord_meta(guild_id: int, user: SessionUser = Depends(get_current_us
         roles_data = roles_resp.json()
         channels_data = channels_resp.json()
     roles = [
-        {"id": str(r["id"]), "name": r["name"], "color": r.get("color", 0), "position": r.get("position", 0)}
+        {
+            "id": str(r["id"]),
+            "name": r["name"],
+            "color": r.get("color", 0),
+            "position": r.get("position", 0),
+        }
         for r in sorted(roles_data, key=lambda x: x.get("position", 0), reverse=True)
         if r.get("name") != "@everyone"
     ]
@@ -42,7 +50,11 @@ async def discord_meta(guild_id: int, user: SessionUser = Depends(get_current_us
     voice_channels = []
     for ch in channels_data:
         ctype = ch.get("type", 0)
-        entry = {"id": str(ch["id"]), "name": ch.get("name", ""), "parentId": ch.get("parent_id")}
+        entry = {
+            "id": str(ch["id"]),
+            "name": ch.get("name", ""),
+            "parentId": ch.get("parent_id"),
+        }
         if ctype == 4:
             categories.append(entry)
         elif ctype in (0, 5):

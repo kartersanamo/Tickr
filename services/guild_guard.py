@@ -4,7 +4,6 @@ import functools
 from typing import Callable
 
 import discord
-from discord import app_commands
 
 from services.guild_config_service import GuildConfigService
 

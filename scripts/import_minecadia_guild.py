@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Import a Minecadia guild config from JSON files into Tickr guilds table."""
+
 from __future__ import annotations
 
 import argparse
@@ -29,10 +30,16 @@ async def main(guild_id: int, config_path: Path, tickets_path: Path) -> None:
     if "CHANNEL_IDS" in config:
         channel_ids = config["CHANNEL_IDS"]
         if "ADMIN+_CHECK_ID" in channel_ids:
-            channel_ids["ADMIN_PRIVATE_CATEGORY_ID"] = channel_ids.pop("ADMIN+_CHECK_ID")
+            channel_ids["ADMIN_PRIVATE_CATEGORY_ID"] = channel_ids.pop(
+                "ADMIN+_CHECK_ID"
+            )
         if "MANAGEMENT_CONTACT_ID" in channel_ids:
-            channel_ids["MANAGEMENT_PRIVATE_CATEGORY_ID"] = channel_ids.pop("MANAGEMENT_CONTACT_ID")
-    await GuildConfigService.create_guild(guild_id, config, ticket_types, configured=True)
+            channel_ids["MANAGEMENT_PRIVATE_CATEGORY_ID"] = channel_ids.pop(
+                "MANAGEMENT_CONTACT_ID"
+            )
+    await GuildConfigService.create_guild(
+        guild_id, config, ticket_types, configured=True
+    )
     print(f"Imported guild {guild_id} as configured.")
 
 

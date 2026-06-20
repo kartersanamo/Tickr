@@ -1,10 +1,11 @@
 """Ticket types CRUD routes."""
+
 from __future__ import annotations
 
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from api.auth.permissions import can_manage_guild
 from api.deps import SessionUser, get_current_user
@@ -15,11 +16,16 @@ router = APIRouter(tags=["ticket-types"])
 
 
 @router.get("/guilds/{guild_id}/ticket-types")
-async def get_ticket_types(guild_id: int, user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def get_ticket_types(
+    guild_id: int, user: SessionUser = Depends(get_current_user)
+) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)
-    return {"data": cfg.tickets_raw(), "categories": editor.category_names(cfg.tickets_raw())}
+    return {
+        "data": cfg.tickets_raw(),
+        "categories": editor.category_names(cfg.tickets_raw()),
+    }
 
 
 class TicketTypesReplaceBody(BaseModel):
@@ -99,7 +105,10 @@ async def delete_category(
 
 @router.patch("/guilds/{guild_id}/ticket-types/categories/{category}/rename")
 async def rename_category(
-    guild_id: int, category: str, body: RenameBody, user: SessionUser = Depends(get_current_user)
+    guild_id: int,
+    category: str,
+    body: RenameBody,
+    user: SessionUser = Depends(get_current_user),
 ) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
@@ -114,7 +123,10 @@ async def rename_category(
 
 @router.post("/guilds/{guild_id}/ticket-types/categories/{category}/types")
 async def add_type(
-    guild_id: int, category: str, body: NameBody, user: SessionUser = Depends(get_current_user)
+    guild_id: int,
+    category: str,
+    body: NameBody,
+    user: SessionUser = Depends(get_current_user),
 ) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
@@ -125,7 +137,9 @@ async def add_type(
             cfg.tickets_raw(),
             category,
             body.name,
-            template=editor.new_ticket_type(staff_role_id=int(staff_role) if staff_role else None),
+            template=editor.new_ticket_type(
+                staff_role_id=int(staff_role) if staff_role else None
+            ),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -133,9 +147,14 @@ async def add_type(
     return {"ok": True}
 
 
-@router.delete("/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}")
+@router.delete(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}"
+)
 async def delete_type(
-    guild_id: int, category: str, type_name: str, user: SessionUser = Depends(get_current_user)
+    guild_id: int,
+    category: str,
+    type_name: str,
+    user: SessionUser = Depends(get_current_user),
 ) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
@@ -148,7 +167,9 @@ async def delete_type(
     return {"ok": True}
 
 
-@router.patch("/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/rename")
+@router.patch(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/rename"
+)
 async def rename_type(
     guild_id: int,
     category: str,
@@ -160,14 +181,18 @@ async def rename_type(
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)
     try:
-        updated = editor.rename_ticket_type(cfg.tickets_raw(), category, type_name, body.newName)
+        updated = editor.rename_ticket_type(
+            cfg.tickets_raw(), category, type_name, body.newName
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await _save_types(guild_id, updated)
     return {"ok": True}
 
 
-@router.post("/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/duplicate")
+@router.post(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/duplicate"
+)
 async def duplicate_type(
     guild_id: int,
     category: str,
@@ -179,7 +204,9 @@ async def duplicate_type(
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)
     try:
-        updated = editor.duplicate_ticket_type(cfg.tickets_raw(), category, type_name, body.newName)
+        updated = editor.duplicate_ticket_type(
+            cfg.tickets_raw(), category, type_name, body.newName
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await _save_types(guild_id, updated)
@@ -207,7 +234,9 @@ async def update_type(
     return {"ok": True}
 
 
-@router.post("/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/questions")
+@router.post(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/questions"
+)
 async def add_question(
     guild_id: int,
     category: str,
@@ -218,7 +247,9 @@ async def add_question(
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     cfg = await GuildConfigService.for_guild(guild_id)
-    question = editor.new_question(label=body.label, placeholder=body.placeholder, length=body.length)
+    question = editor.new_question(
+        label=body.label, placeholder=body.placeholder, length=body.length
+    )
     try:
         updated = editor.add_question(cfg.tickets_raw(), category, type_name, question)
     except ValueError as exc:
@@ -227,7 +258,9 @@ async def add_question(
     return {"ok": True}
 
 
-@router.delete("/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/questions/{label}")
+@router.delete(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/questions/{label}"
+)
 async def delete_question(
     guild_id: int,
     category: str,
@@ -263,7 +296,9 @@ async def toggle_global(
     return {"ok": True}
 
 
-@router.patch("/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/private-mode")
+@router.patch(
+    "/guilds/{guild_id}/ticket-types/categories/{category}/types/{type_name}/private-mode"
+)
 async def cycle_private_mode(
     guild_id: int,
     category: str,

@@ -1,4 +1,5 @@
 """Modals for /manage-tickets CRUD actions."""
+
 from __future__ import annotations
 
 import discord
@@ -18,7 +19,9 @@ from services.ticket_types_editor import (
 from services.ticket_types_store import load_raw, save_raw
 
 
-async def _save_and_refresh_categories(interaction: discord.Interaction, guild_id: int, data: dict) -> None:
+async def _save_and_refresh_categories(
+    interaction: discord.Interaction, guild_id: int, data: dict
+) -> None:
     await save_raw(guild_id, data)
     from ui.views.manage_categories_view import ManageCategoriesView
 
@@ -71,13 +74,17 @@ class AddCategoryModal(discord.ui.Modal, title="Add Panel Category"):
             name = self.name_input.value.strip()
             data = add_category(data, name)
             await _save_and_refresh_categories(interaction, self.guild_id, data)
-            await interaction.followup.send(f"`✅` Added panel category **{name}**.", ephemeral=True)
+            await interaction.followup.send(
+                f"`✅` Added panel category **{name}**.", ephemeral=True
+            )
         except ValueError as exc:
             await interaction.followup.send(f"`❌` {exc}", ephemeral=True)
 
 
 class RenameCategoryModal(discord.ui.Modal, title="Rename Panel Category"):
-    name_input = discord.ui.TextInput(label="New category name", max_length=80, required=True)
+    name_input = discord.ui.TextInput(
+        label="New category name", max_length=80, required=True
+    )
 
     def __init__(self, guild_id: int, category: str) -> None:
         super().__init__()
@@ -110,7 +117,9 @@ class AddTicketTypeModal(discord.ui.Modal, title="Add Ticket Type"):
         max_length=100,
         required=True,
     )
-    emoji_input = discord.ui.TextInput(label="Emoji", default="🎫", max_length=8, required=False)
+    emoji_input = discord.ui.TextInput(
+        label="Emoji", default="🎫", max_length=8, required=False
+    )
 
     def __init__(self, guild_id: int, category: str) -> None:
         super().__init__()
@@ -134,7 +143,9 @@ class AddTicketTypeModal(discord.ui.Modal, title="Add Ticket Type"):
             data = await load_raw(self.guild_id)
             type_name = self.name_input.value.strip()
             data = add_ticket_type(data, self.category, type_name, template=template)
-            await _save_and_refresh_types(interaction, self.guild_id, data, self.category)
+            await _save_and_refresh_types(
+                interaction, self.guild_id, data, self.category
+            )
             await interaction.followup.send(
                 f"`✅` Added ticket type **{type_name}** to **{self.category}**.",
                 ephemeral=True,
@@ -144,7 +155,9 @@ class AddTicketTypeModal(discord.ui.Modal, title="Add Ticket Type"):
 
 
 class DuplicateTicketTypeModal(discord.ui.Modal, title="Duplicate Ticket Type"):
-    name_input = discord.ui.TextInput(label="New type name", max_length=80, required=True)
+    name_input = discord.ui.TextInput(
+        label="New type name", max_length=80, required=True
+    )
 
     def __init__(self, guild_id: int, category: str, source_type: str) -> None:
         super().__init__()
@@ -160,8 +173,12 @@ class DuplicateTicketTypeModal(discord.ui.Modal, title="Duplicate Ticket Type"):
         try:
             data = await load_raw(self.guild_id)
             new_name = self.name_input.value.strip()
-            data = duplicate_ticket_type(data, self.category, self.source_type, new_name)
-            await _save_and_refresh_types(interaction, self.guild_id, data, self.category)
+            data = duplicate_ticket_type(
+                data, self.category, self.source_type, new_name
+            )
+            await _save_and_refresh_types(
+                interaction, self.guild_id, data, self.category
+            )
             await interaction.followup.send(
                 f"`✅` Duplicated **{self.source_type}** as **{new_name}**.",
                 ephemeral=True,
@@ -171,7 +188,9 @@ class DuplicateTicketTypeModal(discord.ui.Modal, title="Duplicate Ticket Type"):
 
 
 class RenameTicketTypeModal(discord.ui.Modal, title="Rename Ticket Type"):
-    name_input = discord.ui.TextInput(label="New type name", max_length=80, required=True)
+    name_input = discord.ui.TextInput(
+        label="New type name", max_length=80, required=True
+    )
 
     def __init__(self, guild_id: int, category: str, type_name: str) -> None:
         super().__init__()
@@ -200,7 +219,9 @@ class RenameTicketTypeModal(discord.ui.Modal, title="Rename Ticket Type"):
 
 
 class AddQuestionModal(discord.ui.Modal, title="Add Question"):
-    label_input = discord.ui.TextInput(label="Question label", max_length=45, required=True)
+    label_input = discord.ui.TextInput(
+        label="Question label", max_length=45, required=True
+    )
     placeholder_input = discord.ui.TextInput(
         label="Placeholder",
         max_length=100,
@@ -227,7 +248,11 @@ class AddQuestionModal(discord.ui.Modal, title="Add Question"):
             data = await load_raw(self.guild_id)
             data = add_question(data, self.category, self.type_name, question)
             await _save_and_refresh_types(
-                interaction, self.guild_id, data, self.category, type_name=self.type_name
+                interaction,
+                self.guild_id,
+                data,
+                self.category,
+                type_name=self.type_name,
             )
             await interaction.followup.send(
                 f"`✅` Added question **{question['Label']}**.",

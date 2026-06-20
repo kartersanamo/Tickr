@@ -1,4 +1,5 @@
 """oldest.py — Display oldest open tickets."""
+
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -16,7 +17,10 @@ class Oldest(commands.Cog):
 
     @TaskDecorator.task("Get Data", False)
     async def get_data_list(
-        self, interaction: discord.Interaction, guild_id: int, category: discord.CategoryChannel = None
+        self,
+        interaction: discord.Interaction,
+        guild_id: int,
+        category: discord.CategoryChannel = None,
     ) -> list[str]:
         data: list = []
         bad_channels: list = []
@@ -28,7 +32,9 @@ class Oldest(commands.Cog):
             channel = interaction.guild.get_channel(int(row["channel_id"]))
             if channel:
                 if category is None or channel.category_id == category.id:
-                    data.append(f"{channel.mention} <t:{int(float(row['opened_at']))}:R>")
+                    data.append(
+                        f"{channel.mention} <t:{int(float(row['opened_at']))}:R>"
+                    )
             else:
                 bad_channels.append(row["channel_id"])
 
@@ -48,11 +54,16 @@ class Oldest(commands.Cog):
 
     @TaskDecorator.task("Send Paginator", False)
     async def send_paginator(
-        self, interaction: discord.Interaction, data: list[str], category: discord.CategoryChannel = None
+        self,
+        interaction: discord.Interaction,
+        data: list[str],
+        category: discord.CategoryChannel = None,
     ) -> None:
         cfg = await GuildConfigService.for_guild(interaction.guild_id)
         paginate = paginator_for_cfg(cfg)
-        paginate.title = f"Oldest Tickets in {category.name}" if category else "Oldest Tickets"
+        paginate.title = (
+            f"Oldest Tickets in {category.name}" if category else "Oldest Tickets"
+        )
         paginate.sep = 15
         paginate.category = category
         paginate.data = data
@@ -60,13 +71,19 @@ class Oldest(commands.Cog):
         await paginate.send(interaction)
 
     @app_commands.guild_only()
-    @app_commands.command(name="oldest", description="Displays the oldest tickets that are currently open")
+    @app_commands.command(
+        name="oldest", description="Displays the oldest tickets that are currently open"
+    )
     @app_commands.describe(category="The category of tickets to display")
-    async def oldest(self, interaction: discord.Interaction, category: discord.CategoryChannel = None) -> None:
+    async def oldest(
+        self, interaction: discord.Interaction, category: discord.CategoryChannel = None
+    ) -> None:
         await self.oldest_command(interaction, category)
 
     @TaskDecorator.task("Oldest Command", True)
-    async def oldest_command(self, interaction: discord.Interaction, category: discord.CategoryChannel) -> None:
+    async def oldest_command(
+        self, interaction: discord.Interaction, category: discord.CategoryChannel
+    ) -> None:
         if interaction.guild_id is None:
             return
         await interaction.response.defer()

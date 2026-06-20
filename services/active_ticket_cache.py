@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import discord
 from discord.ext import commands, tasks
 
 from core.database import DatabasePool
@@ -31,7 +30,9 @@ class ActiveTicketCache:
         )
         self._cache.clear()
         for row in rows:
-            self._cache[self._key(int(row["guild_id"]), int(row["channel_id"]))] = int(row["owner_id"])
+            self._cache[self._key(int(row["guild_id"]), int(row["channel_id"]))] = int(
+                row["owner_id"]
+            )
 
 
 active_ticket_cache = ActiveTicketCache()

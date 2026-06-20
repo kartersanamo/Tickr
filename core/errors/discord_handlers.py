@@ -1,4 +1,5 @@
 """Global Discord and asyncio error handlers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -37,11 +38,15 @@ class DiscordErrorHandlers:
                 component="slash_command",
             )
             await SafeInteractions.safe_reply(
-                interaction, content=ErrorMessages.format_user_error(message), ephemeral=True
+                interaction,
+                content=ErrorMessages.format_user_error(message),
+                ephemeral=True,
             )
 
         @bot.event
-        async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
+        async def on_command_error(
+            ctx: commands.Context, error: commands.CommandError
+        ) -> None:
             if isinstance(error, commands.CommandNotFound):
                 return
             message = ErrorMessages.user_message_for(error)
@@ -58,15 +63,21 @@ class DiscordErrorHandlers:
                 component="prefix_command",
             )
             try:
-                await ctx.send(ErrorMessages.format_user_error(message), delete_after=15)
+                await ctx.send(
+                    ErrorMessages.format_user_error(message), delete_after=15
+                )
             except discord.HTTPException:
                 pass
 
-        def _asyncio_exception_handler(loop: asyncio.AbstractEventLoop, context: dict) -> None:
+        def _asyncio_exception_handler(
+            loop: asyncio.AbstractEventLoop, context: dict
+        ) -> None:
             exc = context.get("exception")
             msg = context.get("message", "Unhandled asyncio exception")
             if exc is not None:
-                ExceptionLogging.log_exception(log_tasks, exc, bot_name=bot_name, component="asyncio_task")
+                ExceptionLogging.log_exception(
+                    log_tasks, exc, bot_name=bot_name, component="asyncio_task"
+                )
             else:
                 log_tasks.error(f"[{bot_name}] asyncio: {msg}")
 
@@ -87,9 +98,13 @@ class DiscordErrorHandlers:
             def _fallback(loop: asyncio.AbstractEventLoop, context: dict) -> None:
                 exc = context.get("exception")
                 if exc is not None:
-                    ExceptionLogging.log_exception(log_tasks, exc, bot_name=bot_name, component="asyncio_task")
+                    ExceptionLogging.log_exception(
+                        log_tasks, exc, bot_name=bot_name, component="asyncio_task"
+                    )
                 else:
-                    log_tasks.error(f"[{bot_name}] asyncio: {context.get('message', 'unknown')}")
+                    log_tasks.error(
+                        f"[{bot_name}] asyncio: {context.get('message', 'unknown')}"
+                    )
 
             handler = _fallback
 

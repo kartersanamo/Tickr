@@ -12,11 +12,13 @@ def _interaction_context(interaction: Optional[discord.Interaction]) -> dict[str
     ctx: dict[str, Any] = {
         "user_id": getattr(interaction.user, "id", None),
         "guild_id": getattr(interaction.guild, "id", None),
-        "channel_id": getattr(interaction.channel, "id", None)
+        "channel_id": getattr(interaction.channel, "id", None),
     }
     cmd = interaction.command
     if cmd is not None:
-        ctx["command"] = getattr(cmd, "qualified_name", None) or getattr(cmd, "name", None)
+        ctx["command"] = getattr(cmd, "qualified_name", None) or getattr(
+            cmd, "name", None
+        )
     return {k: v for k, v in ctx.items() if v is not None}
 
 
@@ -28,7 +30,7 @@ def log_exception(
     interaction: Optional[discord.Interaction] = None,
     component: str | None = None,
     extra: Optional[dict[str, Any]] = None,
-    level: int = logging.ERROR
+    level: int = logging.ERROR,
 ) -> None:
     parts: list[str] = []
     if bot_name:
@@ -39,19 +41,21 @@ def log_exception(
         parts.append(exc.log_message)
     else:
         parts.append(str(exc))
-    
-    ctx = _interaction_context(interaction = interaction)
+
+    ctx = _interaction_context(interaction=interaction)
     if extra:
         ctx.update(extra)
     if ctx:
         ctx_str = " ".join(f"{k}={v}" for k, v in ctx.items())
         parts.append(f"({ctx_str})")
-    
+
         logger.log(
-        level = level,
-        msg = " ".join(parts),
-        exc_info = exc if level >= logging.ERROR else None
-    )
+            level=level,
+            msg=" ".join(parts),
+            exc_info=exc if level >= logging.ERROR else None,
+        )
 
 
-ExceptionLogging = type("ExceptionLogging", (), {"log_exception": staticmethod(log_exception)})
+ExceptionLogging = type(
+    "ExceptionLogging", (), {"log_exception": staticmethod(log_exception)}
+)

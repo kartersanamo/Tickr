@@ -1,4 +1,5 @@
 """add.py — Add user to ticket."""
+
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -35,7 +36,9 @@ class Add(commands.Cog):
         return False
 
     @TaskDecorator.task("Check Timed Out", False)
-    async def check_timed_out(self, interaction: discord.Interaction, user: discord.Member) -> bool:
+    async def check_timed_out(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> bool:
         if user.is_timed_out():
             await interaction.response.send_message(
                 content="`❌` Failed! You cannot add this player to the ticket as they are currently timed out!",
@@ -45,14 +48,18 @@ class Add(commands.Cog):
         return False
 
     @TaskDecorator.task("Set Permissions", False)
-    async def set_permissions(self, channel: discord.TextChannel, user: discord.Member) -> None:
+    async def set_permissions(
+        self, channel: discord.TextChannel, user: discord.Member
+    ) -> None:
         perms = channel.overwrites_for(user)
         perms.view_channel = True
         perms.send_messages = True
         await channel.set_permissions(user, overwrite=perms)
 
     @TaskDecorator.task("Send Embed", False)
-    async def send_embed(self, interaction: discord.Interaction, user: discord.Member, cfg) -> None:
+    async def send_embed(
+        self, interaction: discord.Interaction, user: discord.Member, cfg
+    ) -> None:
         embed = discord.Embed(
             color=embed_color(cfg),
             description=f"{interaction.user.mention} has added {user.mention} to the ticket {interaction.channel.mention}",
@@ -72,11 +79,17 @@ class Add(commands.Cog):
         await self.add_command(interaction, user)
 
     @TaskDecorator.task("Add Command", True)
-    async def add_command(self, interaction: discord.Interaction, user: discord.Member) -> None:
-        if interaction.guild_id is None or not isinstance(interaction.channel, discord.TextChannel):
+    async def add_command(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> None:
+        if interaction.guild_id is None or not isinstance(
+            interaction.channel, discord.TextChannel
+        ):
             return
         cfg = await GuildConfigService.for_guild(interaction.guild_id)
-        blacklisted = await self.check_blacklisted(interaction, user, interaction.guild_id)
+        blacklisted = await self.check_blacklisted(
+            interaction, user, interaction.guild_id
+        )
         timed_out = await self.check_timed_out(interaction, user)
         if not blacklisted and not timed_out:
             await self.set_permissions(interaction.channel, user)

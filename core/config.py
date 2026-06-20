@@ -1,4 +1,5 @@
 """Backward-compatible alias for bot-level configuration."""
+
 from core.bot_config import BotConfig
 
 

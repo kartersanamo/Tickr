@@ -1,4 +1,5 @@
 """manage_tickets.py — In-Discord ticket type editor."""
+
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -21,7 +22,9 @@ class ManageTickets(commands.Cog):
     async def manage_tickets(self, interaction: discord.Interaction):
         if interaction.guild_id is None:
             return
-        await interaction.response.send_message(content="Fetching the manage tickets menu...")
+        await interaction.response.send_message(
+            content="Fetching the manage tickets menu..."
+        )
         ticket_info = await GuildConfigService.reload_tickets(interaction.guild_id)
         view = ManageCategoriesView(ticket_info, interaction.guild_id)
         await view.update_embed(interaction)

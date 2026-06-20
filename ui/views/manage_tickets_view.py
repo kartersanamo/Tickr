@@ -43,7 +43,9 @@ class RemoveTicketTypeSelect(discord.ui.Select):
         self.guild_id = guild_id
         labels = ticket_type_names(ticket_info, category)
         options = [
-            discord.SelectOption(label=label, description="Delete this ticket type", emoji="🗑️")
+            discord.SelectOption(
+                label=label, description="Delete this ticket type", emoji="🗑️"
+            )
             for label in labels[:25]
         ]
         super().__init__(
@@ -68,7 +70,9 @@ class DuplicateTicketTypeSelect(discord.ui.Select):
         self.category = category
         self.guild_id = guild_id
         labels = ticket_type_names(ticket_info, category)
-        options = [discord.SelectOption(label=label, emoji="📋") for label in labels[:25]]
+        options = [
+            discord.SelectOption(label=label, emoji="📋") for label in labels[:25]
+        ]
         super().__init__(
             placeholder="Duplicate a ticket type...",
             options=options,
@@ -93,7 +97,9 @@ class ConfirmDeleteTicketTypeView(discord.ui.View):
         self.type_name = type_name
 
     @discord.ui.button(label="Confirm Delete", style=discord.ButtonStyle.danger)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def confirm(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         if not await require_ticket_editor(interaction):
             return
         await interaction.response.defer()
@@ -114,7 +120,9 @@ class ConfirmDeleteTicketTypeView(discord.ui.View):
             await interaction.followup.send(f"`❌` {exc}", ephemeral=True)
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def cancel(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await interaction.response.defer()
         data = await reload_tickets(self.guild_id)
         view = ManageTicketsView(data, self.category, self.guild_id)
@@ -138,9 +146,13 @@ class ManageTicketsView(discord.ui.View):
 
     async def update_embed(self, interaction: discord.Interaction) -> None:
         try:
-            self.ticket_info = await reload_tickets(interaction.guild_id or self.guild_id)
+            self.ticket_info = await reload_tickets(
+                interaction.guild_id or self.guild_id
+            )
             category_info = self.ticket_info.get(self.category, {})
-            cfg = await GuildConfigService.for_guild(interaction.guild_id or self.guild_id)
+            cfg = await GuildConfigService.for_guild(
+                interaction.guild_id or self.guild_id
+            )
             category_embed = discord.Embed(
                 title="Category Editor",
                 color=embed_color(cfg),
@@ -167,8 +179,12 @@ class ManageTicketsView(discord.ui.View):
         except Exception as exc:
             log_commands.error(f"Failed to update category embed: {exc}")
 
-    @discord.ui.button(label="|<", style=discord.ButtonStyle.red, custom_id="go_back_category", row=4)
-    async def go_back_category(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    @discord.ui.button(
+        label="|<", style=discord.ButtonStyle.red, custom_id="go_back_category", row=4
+    )
+    async def go_back_category(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         try:
             from ui.views.manage_categories_view import ManageCategoriesView
 
@@ -181,14 +197,30 @@ class ManageTicketsView(discord.ui.View):
         except Exception as exc:
             log_commands.error(f"Failed to go back to categories: {exc}")
 
-    @discord.ui.button(label="Add Type", style=discord.ButtonStyle.green, custom_id="manage_add_type", row=4)
-    async def add_type(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    @discord.ui.button(
+        label="Add Type",
+        style=discord.ButtonStyle.green,
+        custom_id="manage_add_type",
+        row=4,
+    )
+    async def add_type(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         if not await require_ticket_editor(interaction):
             return
-        await interaction.response.send_modal(AddTicketTypeModal(self.guild_id, self.category))
+        await interaction.response.send_modal(
+            AddTicketTypeModal(self.guild_id, self.category)
+        )
 
-    @discord.ui.button(label="Toggle Category", style=discord.ButtonStyle.grey, custom_id="toggle_category", row=4)
-    async def toggle_category(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    @discord.ui.button(
+        label="Toggle Category",
+        style=discord.ButtonStyle.grey,
+        custom_id="toggle_category",
+        row=4,
+    )
+    async def toggle_category(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         try:
             if not await require_ticket_editor(interaction):
                 return

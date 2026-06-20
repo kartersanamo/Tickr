@@ -54,7 +54,9 @@ class Questions(discord.ui.Modal):
             log_tasks.error(f"Failed to add items to the Questions modal {exc}")
 
     @TaskDecorator.task("Get Previous Ticket", False)
-    async def get_previous_ticket(self, guild_id: int, owner_id: int, cfg) -> discord.Embed | None:
+    async def get_previous_ticket(
+        self, guild_id: int, owner_id: int, cfg
+    ) -> discord.Embed | None:
         rows = DatabasePool.execute(
             "SELECT name, number, reason, transcript, closed_at, closed_by_id, privated FROM tickets "
             "WHERE guild_id = %s AND owner_id = %s AND is_active = 0 ORDER BY closed_at DESC LIMIT 1",
@@ -123,7 +125,9 @@ class Questions(discord.ui.Modal):
             embed = discord.Embed(description=new_description, color=embed_color(cfg))
             set_embed_footer(embed, cfg)
 
-            previous_ticket = await self.get_previous_ticket(interaction.guild_id, user.id, cfg)
+            previous_ticket = await self.get_previous_ticket(
+                interaction.guild_id, user.id, cfg
+            )
             if previous_ticket:
                 await message.edit(embeds=[embed, previous_ticket], view=None)
             else:

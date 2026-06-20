@@ -1,4 +1,5 @@
 """FastAPI dependencies for Tickr dashboard API."""
+
 from __future__ import annotations
 
 import os
@@ -14,9 +15,15 @@ load_dotenv()
 
 JWT_SECRET = os.environ.get("DASHBOARD_INTERNAL_SECRET", "")
 JWT_ALGORITHM = "HS256"
-DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN") or os.environ.get("DISCORD_TOKEN", "")
-TICKETS_BOT_API_URL = os.environ.get("TICKETS_BOT_API_URL", "http://127.0.0.1:8788").rstrip("/")
-TICKETS_BOT_API_SECRET = os.environ.get("TICKETS_BOT_API_SECRET") or os.environ.get("CONTROL_API_SECRET", "")
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN") or os.environ.get(
+    "DISCORD_TOKEN", ""
+)
+TICKETS_BOT_API_URL = os.environ.get(
+    "TICKETS_BOT_API_URL", "http://127.0.0.1:8788"
+).rstrip("/")
+TICKETS_BOT_API_SECRET = os.environ.get("TICKETS_BOT_API_SECRET") or os.environ.get(
+    "CONTROL_API_SECRET", ""
+)
 
 _bearer = HTTPBearer(auto_error=False)
 

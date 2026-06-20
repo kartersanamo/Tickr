@@ -1,4 +1,5 @@
 """Live ticket list and bot command proxy routes."""
+
 from __future__ import annotations
 
 import time
@@ -8,7 +9,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from api.auth.permissions import can_manage_guild, fetch_guild_info
+from api.auth.permissions import can_manage_guild
 from api.deps import (
     DISCORD_BOT_TOKEN,
     TICKETS_BOT_API_SECRET,
@@ -55,7 +56,9 @@ def _format_ticket_row(row: dict, channel_name: str) -> dict[str, Any]:
 
 
 @router.get("/guilds/{guild_id}/tickets/active")
-async def active_tickets(guild_id: int, user: SessionUser = Depends(get_current_user)) -> dict[str, Any]:
+async def active_tickets(
+    guild_id: int, user: SessionUser = Depends(get_current_user)
+) -> dict[str, Any]:
     if not await can_manage_guild(user, guild_id):
         raise HTTPException(status_code=403, detail="Access denied")
     rows = DatabasePool.execute(
@@ -102,7 +105,10 @@ async def _proxy_bot_api(path: str, payload: dict) -> dict[str, Any]:
     if not TICKETS_BOT_API_SECRET:
         raise HTTPException(status_code=503, detail="Bot API secret not configured")
     url = f"{TICKETS_BOT_API_URL}{path}"
-    headers = {"X-Tickets-Key": TICKETS_BOT_API_SECRET, "Content-Type": "application/json"}
+    headers = {
+        "X-Tickets-Key": TICKETS_BOT_API_SECRET,
+        "Content-Type": "application/json",
+    }
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(url, json=payload, headers=headers)
         try:
@@ -110,7 +116,9 @@ async def _proxy_bot_api(path: str, payload: dict) -> dict[str, Any]:
         except Exception:
             data = {"error": resp.text}
         if resp.status_code >= 400:
-            raise HTTPException(status_code=resp.status_code, detail=data.get("error", "Bot API error"))
+            raise HTTPException(
+                status_code=resp.status_code, detail=data.get("error", "Bot API error")
+            )
         return data
 
 

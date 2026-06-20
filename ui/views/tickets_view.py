@@ -21,11 +21,15 @@ def _build_select(category_name: str, category_info: dict) -> discord.ui.Select:
 
 
 class TicketsView(discord.ui.View):
-    def __init__(self, tickets: dict | None = None, slice_start: int = 0, slice_end: int = 5) -> None:
+    def __init__(
+        self, tickets: dict | None = None, slice_start: int = 0, slice_end: int = 5
+    ) -> None:
         super().__init__(timeout=None)
         self.ticket_manager = TicketCreationService()
         self._tickets = tickets or {}
-        for category_name, category_info in list(self._tickets.items())[slice_start:slice_end]:
+        for category_name, category_info in list(self._tickets.items())[
+            slice_start:slice_end
+        ]:
             if not isinstance(category_info, dict):
                 continue
             select = _build_select(category_name, category_info)

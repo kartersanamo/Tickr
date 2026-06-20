@@ -1,4 +1,5 @@
 """Guild config field schema and helpers for setup / manage-config."""
+
 from __future__ import annotations
 
 import copy
@@ -272,7 +273,7 @@ CONFIG_FIELDS: tuple[ConfigField, ...] = (
         "role_hierarchy",
         "ROLE_HIERARCHY",
         "Role Hierarchy (JSON)",
-        'JSON map of role ID strings to hierarchy numbers for `/remove`.',
+        "JSON map of role ID strings to hierarchy numbers for `/remove`.",
         "json",
         category="advanced",
     ),
@@ -361,7 +362,10 @@ def format_field_value(
     if field.field_type == "role" and guild:
         role = guild.get_role(int(value))
         return role.mention if role else f"`{value}`"
-    if field.field_type in ("channel_text", "channel_category", "channel_voice") and guild:
+    if (
+        field.field_type in ("channel_text", "channel_category", "channel_voice")
+        and guild
+    ):
         channel = guild.get_channel(int(value))
         return channel.mention if channel else f"`{value}`"
     if field.field_type == "role_list" and guild:

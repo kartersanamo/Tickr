@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run SQL migrations against the configured database."""
+
 from __future__ import annotations
 
 import os
@@ -91,7 +92,7 @@ def run_migrations() -> None:
                     print(f"  Skipping (already applied): {exc}")
                 else:
                     raise
-        print(f"  Done.")
+        print("  Done.")
 
     cursor.close()
     conn.close()
