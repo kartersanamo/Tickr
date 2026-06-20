@@ -5,6 +5,8 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from services.ticket_emoji import normalize_ticket_emoji
+
 RESERVED_KEYS = frozenset({"TOGGLE_STATUS"})
 
 
@@ -42,7 +44,7 @@ def new_ticket_type(
     roles = [staff_role_id] if staff_role_id else []
     return {
         "Status": "Enabled",
-        "Emoji": emoji or "🎫",
+        "Emoji": normalize_ticket_emoji(emoji or "🎫"),
         "Description": description[:100],
         "Category": category_id,
         "PrivateMode": None,
@@ -226,7 +228,7 @@ def set_ticket_emoji(
     if category not in data or type_name not in data.get(category, {}):
         raise ValueError("Ticket type not found.")
     updated = copy.deepcopy(data)
-    updated[category][type_name]["Emoji"] = emoji.strip() or "🎫"
+    updated[category][type_name]["Emoji"] = normalize_ticket_emoji(emoji)
     return updated
 
 

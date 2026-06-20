@@ -7,6 +7,7 @@ from ui.views.manage_tickets_modals import AddQuestionModal, RenameTicketTypeMod
 from ui.views.manage_tickets_support import ManageTicketsSupport
 from services.guild_config_service import GuildConfigService
 from services.guild_helpers import embed_color
+from services.ticket_emoji import is_valid_ticket_emoji
 from services.ticket_types_store import load_raw, reload_tickets, save_raw
 from core.loggers import log_commands
 
@@ -177,6 +178,8 @@ class ManageTypeView(discord.ui.View):
                             return False
                     except Exception:
                         return False
+                if value == "Emoji" and not is_valid_ticket_emoji(m.content.strip()):
+                    return False
                 if m.channel == interaction.channel and m.author == interaction.user:
                     return True
                 return False

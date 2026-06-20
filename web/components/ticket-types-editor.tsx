@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { tickrFetchClient } from "@/lib/api-client";
+import { isValidTicketEmoji, TICKET_EMOJI_ERROR } from "@/lib/ticket-emoji";
 
 type Question = { Label: string; Placeholder: string; Length: string };
 
@@ -106,10 +107,15 @@ export function TicketTypesEditor({ guildId }: Props) {
 
   async function updateEmoji(typeName: string, emoji: string) {
     if (!selectedCategory) return;
+    if (!isValidTicketEmoji(emoji)) {
+      setError(TICKET_EMOJI_ERROR);
+      throw new Error(TICKET_EMOJI_ERROR);
+    }
     await tickrFetchClient(typePath(guildId, selectedCategory, typeName, "/emoji"), {
       method: "PATCH",
       body: JSON.stringify({ emoji }),
     });
+    setError("");
     setMessage("Emoji saved.");
     await load();
   }
@@ -155,6 +161,23 @@ export function TicketTypesEditor({ guildId }: Props) {
       { method: "DELETE" },
     );
     setMessage("Question deleted.");
+    await load();
+  }
+
+  async function deleteType() {
+    if (!selectedCategory || !selectedType) return;
+    if (
+      !window.confirm(
+        `Delete ticket type "${selectedType}" from "${selectedCategory}"? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    await tickrFetchClient(typePath(guildId, selectedCategory, selectedType), {
+      method: "DELETE",
+    });
+    setSelectedType("");
+    setMessage("Ticket type deleted.");
     await load();
   }
 
@@ -298,6 +321,13 @@ export function TicketTypesEditor({ guildId }: Props) {
                   }}
                 />
               </label>
+              <button
+                type="button"
+                className="btn-secondary text-sm text-red-300"
+                onClick={() => void deleteType()}
+              >
+                Delete ticket type
+              </button>
             </div>
           )}
         </div>
@@ -391,27 +421,44 @@ function EmojiRow({
   onSave: (emoji: string) => Promise<void>;
 }) {
   const [value, setValue] = useState(emoji);
+  const [fieldError, setFieldError] = useState("");
 
   useEffect(() => {
     setValue(emoji);
+    setFieldError("");
   }, [emoji]);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg bg-[var(--bg-tertiary)] px-4 py-3">
-      <span className="min-w-[8rem] font-medium">{typeName}</span>
-      <input
-        className="input-field max-w-[8rem] text-center text-xl"
-        value={value}
-        maxLength={32}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={() => {
-          if (value.trim() && value !== emoji) {
-            void onSave(value.trim());
-          }
-        }}
-        aria-label={`Emoji for ${typeName}`}
-      />
-      <span className="text-2xl leading-none">{value || "🎫"}</span>
+    <div className="rounded-lg bg-[var(--bg-tertiary)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="min-w-[8rem] font-medium">{typeName}</span>
+        <input
+          className="input-field max-w-[8rem] text-center text-xl"
+          value={value}
+          maxLength={32}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setFieldError("");
+          }}
+          onBlur={() => {
+            const trimmed = value.trim();
+            if (!trimmed || trimmed === emoji) {
+              setValue(emoji);
+              return;
+            }
+            if (!isValidTicketEmoji(trimmed)) {
+              setFieldError(TICKET_EMOJI_ERROR);
+              setValue(emoji);
+              return;
+            }
+            void onSave(trimmed).catch(() => setValue(emoji));
+          }}
+          aria-label={`Emoji for ${typeName}`}
+          aria-invalid={Boolean(fieldError)}
+        />
+        <span className="text-2xl leading-none">{isValidTicketEmoji(value) ? value : emoji}</span>
+      </div>
+      {fieldError && <p className="mt-2 text-sm text-red-300">{fieldError}</p>}
     </div>
   );
 }
