@@ -1,28 +1,21 @@
-"""
-main.py — Tickr multi-guild ticket bot entry point.
-"""
 import os
-from pathlib import Path
-
-os.chdir(Path(__file__).resolve().parent)
-
+import json
 import discord
 from discord.ext import commands
 from discord import app_commands
 
 from assets.dashboard_http import DashboardHttp
 from core.analytics.register import CommandTrackingRegistrar
-from core.bot_config import BotConfig
-from core.errors.setup import ErrorSetup
 from core.guild_command_sync import GuildCommandSync
 from core.loggers import log_commands, log_tasks
+from core.errors.setup import ErrorSetup
+from core.bot_config import BotConfig
 from core.decorators import TaskDecorator
-from core.app import BotApp
 from core.database import DatabasePool
-from repositories.guild_repository import GuildRepository
+from core.app import BotApp
+from ui.views.tickets_view2_view import TicketsView2
 from ui.views.ticket_logs_view import TicketLogs
 from ui.views.tickets_view import TicketsView
-from ui.views.tickets_view2_view import TicketsView2
 
 
 COG_FILES: list[str] = [
@@ -41,6 +34,8 @@ class Client(commands.Bot):
             log_commands=log_commands,
             log_tasks=log_tasks,
         )
+        self.app: BotApp = BotApp.from_bot(self)
+        self.bot: commands.Bot = self
 
     @TaskDecorator.task(action_name="Setup Cogs")
     async def _setup_cogs(self) -> None:
@@ -49,7 +44,12 @@ class Client(commands.Bot):
             try:
                 await self.load_extension(ext)
                 loaded.append(ext)
-            except Exception as exc:
+            except (
+                commands.ExtensionNotFound,
+                commands.ExtensionAlreadyLoaded,
+                commands.NoEntryPointError,
+                commands.ExtensionFailed,
+            ) as exc:
                 log_commands.error(f"Failed to load extension {ext}: {exc}")
         log_tasks.info(f"Loaded {len(loaded)} extensions")
 
@@ -60,19 +60,16 @@ class Client(commands.Bot):
     @TaskDecorator.task(action_name="Add Views")
     async def _add_views(self) -> None:
         category_names: set[str] = set()
-        try:
-            rows = DatabasePool.execute("SELECT ticket_types FROM guilds")
-            import json
+        rows = DatabasePool.execute("SELECT ticket_types FROM guilds")
 
-            for row in rows:
-                types = row.get("ticket_types")
-                if isinstance(types, str):
-                    types = json.loads(types)
-                for name in (types or {}).keys():
-                    if name != "TOGGLE_STATUS":
-                        category_names.add(name)
-        except Exception:
-            pass
+        for row in rows:
+            types = row.get("ticket_types")
+            if isinstance(types, str):
+                types = json.loads(types)
+            for name in (types or {}).keys():
+                if name != "TOGGLE_STATUS":
+                    category_names.add(name)
+
         names = sorted(category_names)
         views: list[discord.ui.View] = [
             TicketsView.persistent(names),
@@ -120,11 +117,21 @@ class Client(commands.Bot):
         try:
             await self.reload_extension(f"cogs.{cog.lower()}")
             await interaction.response.send_message(f"Reloaded **{cog}.py**", ephemeral=True)
-        except Exception as exc:
-            log_commands.error(f"Reload failed for {cog}: {exc}")
-            await interaction.response.send_message(f"Failed to reload **{cog}.py**", ephemeral=True)
 
-    async def cog_autocomplete(self, _: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+        except (
+            commands.ExtensionNotFound,
+            commands.ExtensionAlreadyLoaded,
+            commands.NoEntryPointError,
+            commands.ExtensionFailed,
+        ) as exc:
+            log_commands.error(f"Reload failed for {cog}: {exc}")
+            await interaction.response.send_message(
+                f"Failed to reload **{cog}.py**", ephemeral=True
+            )
+
+    async def cog_autocomplete(
+        self, _: discord.Interaction, current: str
+    ) -> list[app_commands.Choice[str]]:
         return [
             app_commands.Choice(name=cog, value=cog)
             for cog in COG_FILES

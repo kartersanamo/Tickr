@@ -22,8 +22,5 @@ if [[ ! -f "$ROOT/.env" ]]; then
     exit 1
 fi
 
-echo "Running database migrations..."
-python scripts/migrate.py
-
 echo "Starting Tickr..."
 exec python main.py
